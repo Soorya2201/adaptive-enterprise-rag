@@ -63,4 +63,7 @@ Use the resulting brief for the takeaway, one success, and one failure example.
 Before presenting, have a teammate inspect the cited evidence and rehearse the
 limitations. Next implementation milestones remain grounded generation/refusal,
 reranking, cache and bounded requery, then quality/latency/cost comparisons.
-Slides are a separate follow-up task.
+Slides: `docs/presentation/Team13-Midterm-v2.pptx` is the simplified two-slide
+deck (speaker notes and Q&A prep included). Rebuild it with
+`npm install --no-save pptxgenjs && node docs/presentation/build_v2.cjs`. The earlier
+`Team13-Midterm.pptx` is kept for reference.

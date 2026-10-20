@@ -22,3 +22,4 @@ data/outputs/*
 corpus.jsonl
 all_documents.zip
 all_documents
+node_modules/
