@@ -1,6 +1,6 @@
 // Builds docs/presentation/Team13-Midterm-v2.pptx (2 slides + speaker notes).
 // Usage from the repository root: npm install --no-save pptxgenjs && node docs/presentation/build_v2.cjs
-// Numbers come from results/midterm/retrieval_eval_20261019-023503/summary.json.
+// Slide 2 numbers come from Ty's feat-retrieval-optimizations run (experiments/optimizations).
 const path = require('node:path');
 const pptxgen = require('pptxgenjs');
 
@@ -29,8 +29,8 @@ header(s1, 'TEAM 13  ·  CSCI 544 MIDTERM', 'Match retrieval effort to the quest
 
 const steps = [
   {n: '1', title: 'Check verified cache', sub: 'Repeat? Reuse the answer', built: false},
-  {n: '2', title: 'Retrieve + rerank', sub: 'MiniLM search built today', built: true},
-  {n: '3', title: 'Check the evidence', sub: 'Weak? Search once more', built: false},
+  {n: '2', title: 'Hybrid retrieval', sub: 'Vector + keyword search', built: true},
+  {n: '3', title: 'Check the evidence', sub: 'Disagree? Search again', built: true},
   {n: '4', title: 'Answer or refuse', sub: 'Cite sources, or decline', built: false},
 ];
 const boxW = 2.0, boxH = 1.05, gap = 0.33, boxY = 1.75, x0 = 0.5;
@@ -76,9 +76,9 @@ s1.addNotes(`Speaking target: 55 seconds.
 
 Support teams want fast, correct answers from company documents, but running the full retrieval pipeline on every question is slow and costly, and answering from weak evidence is risky.
 
-Our idea is to match retrieval effort to the question. First, check a cache of verified answers: a repeat question reuses its answer. Otherwise, retrieve and rerank evidence. Then check that evidence. If it is weak, search once more, at most once. Finally, answer with citations, or refuse if the evidence is still insufficient.
+Our idea is to match retrieval effort to the question. First, check a cache of verified answers: a repeat question reuses its answer. Otherwise, retrieve evidence with hybrid search, combining vector and keyword search. Then check that evidence: if the two searches disagree, search once more, at most once. Finally, answer with citations, or refuse if the evidence is still insufficient.
 
-Today the retrieval step is built: a local MiniLM search over company documents. The other steps are planned.
+Today steps 2 and 3 are built and measured on retrieval. The cache and the answering step are planned.
 
 Prior work such as Adaptive-RAG routes by question complexity, and Self-RAG learns when to retrieve and critiques itself. Both decide when to retrieve. We decide how much effort an enterprise question deserves, including reusing an answer or refusing, and we measure the quality-versus-cost tradeoff. Cost savings are still a hypothesis.
 
@@ -87,68 +87,77 @@ Jeong et al., Adaptive-RAG, NAACL 2024: https://aclanthology.org/2024.naacl-long
 Asai et al., Self-RAG, ICLR 2024: https://arxiv.org/abs/2310.11511`);
 
 // ---------- Slide 2: takeaway and remaining work ----------
+// Numbers: Ty's combination run (feat-retrieval-optimizations, experiments/optimizations figure 4).
 const s2 = pres.addSlide();
 s2.background = {color: WHITE};
-header(s2, 'WHAT WE HAVE LEARNED', 'The right document is not always the answer',
-  'MiniLM baseline on an EnterpriseRAG-Bench subset: 100 questions, 290 documents, 3,358 passages');
+header(s2, 'WHAT WE HAVE LEARNED', 'Search harder only when it is needed',
+  'Extra LLM-assisted search runs only when keyword and vector search disagree on the top document');
 
-const types = ['All questions', 'Constrained', 'Basic', 'Intra-doc reasoning', 'Semantic'];
-const hit5 = [84.4, 100, 91.4, 86.7, 64.0];
-s2.addChart(pres.charts.BAR, [{name: 'Hit@5', labels: types, values: hit5}], {
-  x: 0.4, y: 1.55, w: 4.7, h: 2.15, barDir: 'bar', objectName: 'hit5-by-type',
-  chartColors: [INK, LINE, LINE, LINE, AMBER],
-  catAxisOrientation: 'maxMin', valAxisHidden: true, valAxisMaxVal: 115, valAxisMinVal: 0,
-  valGridLine: {style: 'none'}, catGridLine: {style: 'none'},
-  catAxisLabelColor: INK, catAxisLabelFontSize: 11, catAxisLabelFontFace: 'Calibri', catAxisLineShow: false,
-  showValue: true, dataLabelPosition: 'outEnd', dataLabelFormatCode: '0"%"', dataLabelColor: INK,
-  dataLabelFontSize: 11, dataLabelFontFace: 'Calibri', barGapWidthPct: 45,
-  showTitle: true, title: 'Gold document in top 5 (MRR 0.67)', titleFontSize: 12, titleColor: MUTED, titleFontFace: 'Calibri',
-  showLegend: false,
+const rows = [
+  {name: 'Vector search only', ndcg: '0.807', ms: '30 ms'},
+  {name: 'Hybrid: vector + keyword', ndcg: '0.846', ms: '30 ms'},
+  {name: '+ extra search, every question', ndcg: '0.825', ms: '1,320 ms'},
+  {name: '+ extra search, when needed', ndcg: '0.855', ms: '592 ms', best: true},
+];
+const tx = 0.5, tw = 4.75, colN = tx + 2.85, colL = tx + 3.75, rowH = 0.48, ty = 1.95;
+text(s2, 'Ranking quality', {x: colN - 0.35, y: 1.62, w: 0.95, h: 0.25, fontSize: 10, bold: true, color: MUTED, align: 'right'});
+text(s2, 'Latency', {x: colL, y: 1.62, w: 0.9, h: 0.25, fontSize: 10, bold: true, color: MUTED, align: 'right'});
+rows.forEach((row, i) => {
+  const y = ty + i * rowH;
+  if (row.best) {
+    s2.addShape(pres.shapes.ROUNDED_RECTANGLE, {x: tx - 0.1, y: y - 0.06, w: tw + 0.1, h: rowH, rectRadius: 0.06, fill: {color: TEAL_TINT}, line: {color: TEAL_TINT}, objectName: 'best-row'});
+  } else if (i > 0) {
+    s2.addShape(pres.shapes.LINE, {x: tx, y: y - 0.06, w: tw - 0.1, h: 0, line: {color: GRAY_TINT, width: 1}});
+  }
+  const style = {fontSize: 14, bold: !!row.best, color: row.best ? TEAL : INK};
+  text(s2, row.name, {x: tx + 0.05, y: y + 0.04, w: 2.7, h: 0.3, ...style});
+  text(s2, row.ndcg, {x: colN, y: y + 0.04, w: 0.6, h: 0.3, align: 'right', ...style});
+  text(s2, row.ms, {x: colL, y: y + 0.04, w: 0.9, h: 0.3, align: 'right', ...style});
 });
 
-s2.addShape(pres.shapes.ROUNDED_RECTANGLE, {x: 0.5, y: 3.85, w: 4.55, h: 1.15, rectRadius: 0.08, fill: {color: GRAY_TINT}, line: {color: GRAY_TINT}, objectName: 'example'});
+s2.addShape(pres.shapes.ROUNDED_RECTANGLE, {x: 0.5, y: 4.0, w: 4.65, h: 1.0, rectRadius: 0.08, fill: {color: GRAY_TINT}, line: {color: GRAY_TINT}, objectName: 'takeaway'});
 text(s2, [
-  {text: 'Example: ', options: {bold: true}},
-  {text: 'the correct email thread ranked #1, but its best passage starts just after the answer (a five-day runbook turnaround). A document hit is not yet usable evidence.'},
-], {x: 0.7, y: 4.0, w: 4.15, h: 0.9, fontSize: 13});
+  {text: 'Takeaway: ', options: {bold: true}},
+  {text: 'targeting the extra search (46% of questions) cuts latency by more than half versus always searching, and ranks better.'},
+], {x: 0.7, y: 4.15, w: 4.25, h: 0.75, fontSize: 13});
 
-text(s2, 'BEFORE THE FINAL REPORT', {x: 5.45, y: 1.6, w: 4, h: 0.25, fontSize: 11, bold: true, color: TEAL, charSpacing: 1});
+text(s2, 'BEFORE THE FINAL REPORT', {x: 5.6, y: 1.62, w: 3.9, h: 0.25, fontSize: 11, bold: true, color: TEAL, charSpacing: 1});
 const next = [
-  'Keyword + MiniLM search with a reranker',
+  'Confirm on validation and test questions',
   'Grounded answers with citations, plus refusal',
-  'Evidence check, verified cache, and one retry',
-  'Plot answer quality against latency and cost',
-  'Grow to ~300 questions, incl. multi-document',
+  'Verified cache for repeat questions',
+  'Measure answer quality, latency and cost',
+  'Grow to ~300 questions, incl. multi-doc',
 ];
 next.forEach((item, i) => {
   const y = 2.0 + i * 0.52;
-  text(s2, String(i + 1), {x: 5.45, y, w: 0.3, h: 0.4, fontSize: 14, bold: true, color: TEAL});
-  text(s2, item, {x: 5.8, y, w: 3.75, h: 0.4, fontSize: 14});
+  text(s2, String(i + 1), {x: 5.6, y, w: 0.3, h: 0.4, fontSize: 14, bold: true, color: TEAL});
+  text(s2, item, {x: 5.92, y, w: 3.6, h: 0.4, fontSize: 14});
 });
 
-text(s2, 'Exploratory: splits pooled; 90 answerable questions scored, 10 unanswerable excluded. Answer quality and cost savings are not measured yet.',
-  {x: 0.5, y: 5.17, w: 9, h: 0.25, fontSize: 10, color: MUTED});
+text(s2, 'Dev set: 62 answerable questions, Qwen3-Embedding-0.6B, M4 Max. Ranking quality = nDCG@5 (1 = perfect). Not yet validated on held-out data.',
+  {x: 0.5, y: 5.12, w: 9, h: 0.3, fontSize: 10, color: MUTED});
 
 s2.addNotes(`Speaking target: 65 seconds, then about one minute of questions.
 
-We built a reproducible retrieval baseline on a subset of EnterpriseRAG-Bench: 100 questions and 290 documents, split into 3,358 passages and indexed with MiniLM. For 84 percent of the 90 answerable questions, the correct document is in the top five. MRR is 0.67. Constrained and basic questions do well, but semantic questions, the paraphrased ones, drop to 64 percent. A rerun reproduced every rank exactly.
+We tested this idea on our development set of 62 answerable questions. Ranking quality here is nDCG at 5, where 1 means the correct document is ranked first.
 
-Our main takeaway: finding the right document is not the same as finding the answer. In one example the correct email thread ranked first, but its best passage starts just after the five-business-day detail the question asks for. So retrieval scores alone overstate readiness, and we need to check evidence before answering.
+Plain vector search scores 0.807. Adding keyword search to make it hybrid raises that to 0.846, at the same 30 milliseconds. Next we tried an extra search step, where a small local LLM rewrites the query using the first results. Doing that on every question is slow, about 1.3 seconds, and it actually ranks slightly worse, 0.825.
 
-Before the final report: hybrid keyword plus MiniLM search with a reranker for the semantic gap; grounded answers with citations and refusal; the evidence check, verified cache, and one retry; then a plot of answer quality against latency and cost. We will also grow to about 300 questions, including multi-document ones.
+So we made it adaptive: we run the extra search only when keyword search and vector search disagree on the top document. That happens on 46 percent of questions. The result is the best ranking, 0.855, at 592 milliseconds, less than half the latency of always searching. That is our main takeaway: spending effort only where the question needs it can be both cheaper and better.
 
-Results: https://github.com/AdithNG/adaptive-enterprise-retrieval/blob/midterm-presentation/results/midterm/retrieval_eval_20261019-023503/summary.json
-Dataset: https://github.com/onyx-dot-app/EnterpriseRAG-Bench
+These are development results with a stronger embedding model, Qwen3, so next we confirm them on validation and test questions. Then we add grounded answers with citations and refusal, a verified cache for repeat questions, and end-to-end measures of answer quality, latency and cost, and we grow to about 300 questions, including multi-document ones.
+
+Source: Ty's optimization experiments, branch feat-retrieval-optimizations, experiments/optimizations (figure 4, combinations-dev-20261020-01: 8 passes, 3,312 requests).
 
 Q&A:
-What is Hit@5? The share of answerable questions with a correct document among the top five ranked documents.
-What is MRR? The average of 1/rank of the first correct document. It is not the average rank.
-Why 290 documents? 90 gold documents plus 200 related documents chosen as hard negatives. Full-corpus performance is not established.
-Have you reduced cost? Not yet. This run measures retrieval only; adaptive comparisons come next.
-Do you evaluate refusal? Not yet. Ten unanswerable questions are logged but excluded from retrieval scores.
-Held-out results? Test Hit@5 is 12/15, a small split. Treat it as descriptive; no tuning was done.
-Multi-document questions? None in the current subset; we plan to add them.
-Failure example: qst_0187 (harmful-output warnings over two evaluation windows): the correct document ranks sixth, behind general incident guidance.`);
+What is nDCG@5? A score for the top-5 ranking: 1 if the correct document is first, lower the further down it appears, 0 if it is missing.
+Recall@5? Hybrid 0.919; extra search always 0.935; only when needed 0.935. The gain is mostly in ranking order, not in finding new documents.
+Why not a reranker? We tried the ms-marco MiniLM cross-encoder. It lowered nDCG@5 from 0.807 to 0.781, likely because it was trained on web search, not enterprise documents.
+What is the extra search? LameR: an LLM (Llama 3.2 3B, run locally) drafts likely answers from the top keyword results, and we search again with them.
+Is the gain significant? Paired bootstrap intervals were computed; the run is small (62 questions) and on the development split only, so we present it as an observation.
+Why is this different from the earlier MiniLM numbers? These runs use Qwen3-Embedding-0.6B and a separate experiment harness, so the numbers are not directly comparable.
+Is this cost or only latency? Latency only, on an M4 Max laptop with warm models. Hardware and energy cost are not measured; there are no paid API calls.`);
 
 const out = path.join(__dirname, 'Team13-Midterm-v2.pptx');
 pres.writeFile({fileName: out}).then(() => console.log(`Wrote ${out}`));
