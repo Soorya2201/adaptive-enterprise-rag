@@ -31,7 +31,7 @@ const steps = [
   {n: '1', title: 'Check verified cache', sub: 'Repeat? Reuse the answer', built: false},
   {n: '2', title: 'Hybrid retrieval', sub: 'Vector + keyword search', built: true},
   {n: '3', title: 'Check the evidence', sub: 'Disagree? Search again', built: true},
-  {n: '4', title: 'Answer or refuse', sub: 'Cite sources, or decline', built: false},
+  {n: '4', title: 'Answer or refuse', sub: 'Cite sources, or decline', built: true},
 ];
 const boxW = 2.0, boxH = 1.05, gap = 0.33, boxY = 1.75, x0 = 0.5;
 steps.forEach((step, i) => {
@@ -78,7 +78,7 @@ Support teams want fast, correct answers from company documents, but running the
 
 Our idea is to match retrieval effort to the question. First, check a cache of verified answers: a repeat question reuses its answer. Otherwise, retrieve evidence with hybrid search, combining vector and keyword search. Then check that evidence: if the two searches disagree, search once more, at most once. Finally, answer with citations, or refuse if the evidence is still insufficient.
 
-Today steps 2 and 3 are built and measured on retrieval. The cache and the answering step are planned.
+Today steps 2 to 4 are built as prototypes. The verified cache is planned.
 
 Prior work such as Adaptive-RAG routes by question complexity, and Self-RAG learns when to retrieve and critiques itself. Both decide when to retrieve. We decide how much effort an enterprise question deserves, including reusing an answer or refusing, and we measure the quality-versus-cost tradeoff. Cost savings are still a hypothesis.
 
@@ -121,21 +121,27 @@ text(s2, [
   {text: 'targeting the extra search (46% of questions) cuts latency by more than half versus always searching, and ranks better.'},
 ], {x: 0.7, y: 4.15, w: 4.25, h: 0.75, fontSize: 13});
 
-text(s2, 'BEFORE THE FINAL REPORT', {x: 5.6, y: 1.62, w: 3.9, h: 0.25, fontSize: 11, bold: true, color: TEAL, charSpacing: 1});
+text(s2, 'END-TO-END PROTOTYPE', {x: 5.6, y: 1.62, w: 3.9, h: 0.25, fontSize: 11, bold: true, color: TEAL, charSpacing: 1});
+text(s2, [
+  {text: 'A local Qwen3-4B writes cited answers or refuses. Each answer takes up to 6 s, and '},
+  {text: '~96% of that is the LLM writing', options: {bold: true}},
+  {text: ', so reusing verified answers saves the most.'},
+], {x: 5.6, y: 1.95, w: 3.95, h: 1.0, fontSize: 13});
+
+text(s2, 'BEFORE THE FINAL REPORT', {x: 5.6, y: 3.12, w: 3.9, h: 0.25, fontSize: 11, bold: true, color: TEAL, charSpacing: 1});
 const next = [
   'Confirm on validation and test questions',
-  'Grounded answers with citations, plus refusal',
+  'Score answers and refusals on all questions',
   'Verified cache for repeat questions',
-  'Measure answer quality, latency and cost',
   'Grow to ~300 questions, incl. multi-doc',
 ];
 next.forEach((item, i) => {
-  const y = 2.0 + i * 0.52;
-  text(s2, String(i + 1), {x: 5.6, y, w: 0.3, h: 0.4, fontSize: 14, bold: true, color: TEAL});
-  text(s2, item, {x: 5.92, y, w: 3.6, h: 0.4, fontSize: 14});
+  const y = 3.45 + i * 0.4;
+  text(s2, String(i + 1), {x: 5.6, y, w: 0.3, h: 0.35, fontSize: 14, bold: true, color: TEAL});
+  text(s2, item, {x: 5.92, y, w: 3.65, h: 0.35, fontSize: 14});
 });
 
-text(s2, 'Dev set: 62 answerable questions, Qwen3-Embedding-0.6B, M4 Max. Ranking quality = nDCG@5 (1 = perfect). Not yet validated on held-out data.',
+text(s2, 'Retrieval: 62 dev questions, Qwen3-Embedding-0.6B, nDCG@5 (1 = perfect). Answering: 3 rehearsal questions. Not yet validated on held-out data.',
   {x: 0.5, y: 5.12, w: 9, h: 0.3, fontSize: 10, color: MUTED});
 
 s2.addNotes(`Speaking target: 65 seconds, then about one minute of questions.
@@ -146,9 +152,12 @@ Plain vector search scores 0.807. Adding keyword search to make it hybrid raises
 
 So we made it adaptive: we run the extra search only when keyword search and vector search disagree on the top document. That happens on 46 percent of questions. The result is the best ranking, 0.855, at 592 milliseconds, less than half the latency of always searching. That is our main takeaway: spending effort only where the question needs it can be both cheaper and better.
 
-These are development results with a stronger embedding model, Qwen3, so next we confirm them on validation and test questions. Then we add grounded answers with citations and refusal, a verified cache for repeat questions, and end-to-end measures of answer quality, latency and cost, and we grow to about 300 questions, including multi-document ones.
+We also have an end-to-end prototype: a local Qwen3 4B model writes an answer with citations, or refuses when the passages do not support one. In our rehearsal questions, about 96 percent of each answer's time was the model writing it, three and a half to six seconds, versus well under a second for retrieval. So the biggest remaining saving is reusing verified answers, which is our next step.
 
-Source: Ty's optimization experiments, branch feat-retrieval-optimizations, experiments/optimizations (figure 4, combinations-dev-20261020-01: 8 passes, 3,312 requests).
+Before the final report we confirm these development results on validation and test questions, score answers and refusals on every question, add the verified cache, and grow to about 300 questions, including multi-document ones.
+
+Answering source: John's feat-rag-metrics branch, demoplan.md (offline rehearsal on an Apple M4 Pro: qst_0026 answered with two valid citations in 6.21 s, 6.05 s generation; the Gmail password question and qst_0046 refused in 3.96 s and 3.64 s).
+Retrieval source: Ty's optimization experiments, branch feat-retrieval-optimizations, experiments/optimizations (figure 4, combinations-dev-20261020-01: 8 passes, 3,312 requests).
 
 Q&A:
 What is nDCG@5? A score for the top-5 ranking: 1 if the correct document is first, lower the further down it appears, 0 if it is missing.
@@ -157,6 +166,7 @@ Why not a reranker? We tried the ms-marco MiniLM cross-encoder. It lowered nDCG@
 What is the extra search? LameR: an LLM (Llama 3.2 3B, run locally) drafts likely answers from the top keyword results, and we search again with them.
 Is the gain significant? Paired bootstrap intervals were computed; the run is small (62 questions) and on the development split only, so we present it as an observation.
 Why is this different from the earlier MiniLM numbers? These runs use Qwen3-Embedding-0.6B and a separate experiment harness, so the numbers are not directly comparable.
+Does refusal work? A first check: the off-topic Gmail question was refused. qst_0046 was also refused because its retrieved passages missed the 5-business-day answer, a retrieval limit rather than a model error. Citations and quotes are checked by code; semantic correctness is not yet verified at scale.
 Is this cost or only latency? Latency only, on an M4 Max laptop with warm models. Hardware and energy cost are not measured; there are no paid API calls.`);
 
 const out = path.join(__dirname, 'Team13-Midterm-v2.pptx');
