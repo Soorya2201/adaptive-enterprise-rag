@@ -11,6 +11,9 @@ dependencies = []
 
 [project.optional-dependencies]
 local-embeddings = ["sentence-transformers>=3"]
+optimizations = ["numpy>=1.25,<3", "faiss-cpu==1.15.1", "bm25s==0.2.14", "sentence-transformers==5.7.0"]
+optimization-tests = ["numpy>=1.25,<3", "faiss-cpu==1.15.1", "bm25s==0.2.14"]
+figures = ["reportlab>=4,<5"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

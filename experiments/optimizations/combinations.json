@@ -1,0 +1,27 @@
+{
+  "split": "dev",
+  "repeats": 20,
+  "budget_seconds": 1800,
+  "seed": 42,
+  "device": "mps",
+  "faiss_threads": 4,
+  "top_k": 5,
+  "candidate_depth": 50,
+  "expansion_candidates": 5,
+  "gate_margin": 0.05,
+  "generation_model": "llama3.2:3b",
+  "hnsw_m": 32,
+  "ef_search": 64,
+  "nlist": 16,
+  "nprobe": 8,
+  "pq_m": 32,
+  "pq_bits": 4,
+  "variants": [
+    "flat",
+    "bm25s",
+    "hybrid",
+    "lamer_concise",
+    "hybrid_lamer_concise",
+    "hybrid_lamer_gated"
+  ]
+}

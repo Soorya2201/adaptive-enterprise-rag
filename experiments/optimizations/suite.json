@@ -1,0 +1,20 @@
+{
+  "split": "dev",
+  "repeats": 3,
+  "budget_seconds": 1800,
+  "seed": 42,
+  "device": "mps",
+  "faiss_threads": 4,
+  "top_k": 5,
+  "candidate_depth": 50,
+  "expansion_candidates": 5,
+  "gate_margin": 0.05,
+  "generation_model": "llama3.2:3b",
+  "hnsw_m": 32,
+  "ef_search": 64,
+  "nlist": 16,
+  "nprobe": 8,
+  "pq_m": 32,
+  "pq_bits": 4,
+  "variants": ["python", "flat", "hnsw", "ivfpq", "bm25_reference", "bm25s", "hybrid", "rerank", "gated_rerank", "query2doc_original", "query2doc_concise", "lamer_original", "lamer_concise", "lamer_rrf"]
+}

@@ -23,3 +23,7 @@ corpus.jsonl
 all_documents.zip
 all_documents
 node_modules/
+
+# Local reports, model downloads and Finder metadata
+output/
+.DS_Store
