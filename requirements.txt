@@ -1,13 +1,12 @@
-# Python 3.11+. Run from the repository root:
+# Midterm demo on Apple Silicon, Python 3.11+:
+#   conda activate CS544-RAG
 #   python -m pip install -r requirements.txt
-#
-# Install this project with the local chunk-embedding, search, and interactive
-# demo feature. This extra is defined in pyproject.toml and installs PyTorch,
-# Transformers, NumPy, tokenizers, and the model's other dependencies transitively.
--e .[local-embeddings]
-
-# Version verified with MiniLM indexing and the interactive terminal demo.
+# Models download separately with: python src/runner.py download-models
+-e .[demo]
+# Versions exercised in CS544-RAG. MLX is only installed on Apple Silicon.
 sentence-transformers==6.1.0
-
-# The terminal UI and tests use the Python standard library; no extra CLI or
-# testing packages are required. The MiniLM model downloads separately on first use.
+transformers==5.20.2
+torch==2.14.1
+mlx-lm==0.32.2; sys_platform == "darwin" and platform_machine == "arm64"
+mlx==0.32.4; sys_platform == "darwin" and platform_machine == "arm64"
+huggingface-hub==1.33.0

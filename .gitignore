@@ -27,3 +27,4 @@ node_modules/
 # Local reports, model downloads and Finder metadata
 output/
 .DS_Store
+.idea/

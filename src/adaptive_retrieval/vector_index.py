@@ -5,6 +5,7 @@ import json
 import math
 import os
 import tempfile
+from collections.abc import Callable
 from dataclasses import asdict
 from pathlib import Path
 
@@ -33,6 +34,7 @@ def write_index(
     max_words: int,
     overlap_words: int,
     batch_size: int = 32,
+    on_progress: Callable[[int, int], None] | None = None,
 ) -> None:
     """Embed chunks and atomically write metadata followed by vector records."""
     if not chunks:
@@ -49,6 +51,9 @@ def write_index(
                 "_meta": {
                     "schema_version": SCHEMA_VERSION,
                     "model": embedder.model_name,
+                    "model_revision": getattr(embedder, "revision", None),
+                    "query_instruction": getattr(embedder, "query_instruction", ""),
+                    "normalized": True,
                     "corpus_sha256": corpus_sha256,
                     "strategy": strategy,
                     "max_words": max_words,
@@ -66,6 +71,8 @@ def write_index(
                     if not vector or not all(math.isfinite(value) for value in vector):
                         raise ValueError(f"Invalid vector for {chunk.id}")
                     stream.write(json.dumps({"chunk": asdict(chunk), "vector": vector}) + "\n")
+                if on_progress:
+                    on_progress(min(start + batch_size, len(chunks)), len(chunks))
         os.replace(temporary_path, path)
     finally:
         if temporary_path is not None and temporary_path.exists():

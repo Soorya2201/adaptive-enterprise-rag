@@ -7,7 +7,8 @@ from pathlib import Path
 from time import perf_counter
 
 from .data import load_documents
-from .embedding import Embedder, MiniLMEmbedder
+from .embedding import Embedder, LocalEmbedder
+from .model_store import EMBEDDING_MODEL
 from .models import Chunk, Document
 from .vector_index import file_sha256, load_index, search_index
 
@@ -24,9 +25,14 @@ class SearchSession:
                 f"Index not found: {index_path}. Run 'chunk' and 'embed' before searching."
             )
         self.metadata, self.rows = load_index(index_path)
-        self.embedder = embedder if embedder is not None else MiniLMEmbedder()
+        self.embedder = embedder if embedder is not None else LocalEmbedder(
+            model_name=self.metadata["model"], revision=self.metadata.get("model_revision"),
+        )
         if self.metadata["model"] != self.embedder.model_name:
             raise ValueError(f"Index uses a different embedding model: {self.metadata['model']}")
+        if self.metadata["model"] == EMBEDDING_MODEL:
+            if self.metadata.get("query_instruction") != self.embedder.query_instruction:
+                raise ValueError("Index uses a different query instruction; rebuild with 'embed'")
         if not self.rows:
             raise ValueError("The index has no passages. Run 'chunk' and 'embed' again.")
         self.documents: dict[str, Document] = {}
@@ -34,6 +40,7 @@ class SearchSession:
             if file_sha256(corpus_path) != self.metadata["corpus_sha256"]:
                 raise ValueError("The corpus changed since indexing; run 'chunk' and 'embed' again")
             self.documents = {document.id: document for document in load_documents(corpus_path)}
+        self.last_timings: dict[str, float] = {}
 
     def search(self, question: str, top_k: int = 3) -> list[tuple[Chunk, float]]:
         question = question.strip()
@@ -41,8 +48,18 @@ class SearchSession:
             raise ValueError("Enter a question to search")
         if top_k < 1:
             raise ValueError("top_k must be positive")
-        query_vector = self.embedder.embed_texts([question])[0]
-        return search_index(self.rows, query_vector, top_k)
+        started = perf_counter()
+        if hasattr(self.embedder, "embed_query"):
+            query_vector = self.embedder.embed_query(question)
+        else:
+            query_vector = self.embedder.embed_texts([question])[0]
+        encoded = perf_counter()
+        results = search_index(self.rows, query_vector, top_k)
+        self.last_timings = {
+            "embedding_ms": (encoded - started) * 1000,
+            "vector_search_ms": (perf_counter() - encoded) * 1000,
+        }
+        return results
 
 
 def _print_text(text: str, output: Callable[[str], None], width: int) -> None:
@@ -75,7 +92,7 @@ def run_interactive(
     document_count = len({chunk.document_id for chunk, _ in session.rows})
     output(f"Enterprise retrieval | {document_count} documents | {len(session.rows)} indexed passages")
     output("Passages are source text; relevance scores do not verify their claims.")
-    output("MiniLM loads on your first question and is reused for this session.")
+    output(f"{session.metadata['model']} loads on your first question and is reused.")
     output(HELP)
     latest: list[tuple[Chunk, float]] = []
 
