@@ -12,7 +12,7 @@
 
 | Area | Verified state |
 | --- | --- |
-| Dataset scope | Initial proposal: about 10,000 documents. Implemented subset: 290 documents (90 gold plus 200 other referenced documents), 100 questions. |
+| Dataset scope | Full EnterpriseRAG-Bench: ~500,000 documents and 500 questions. Initial proposal target: about 10,000 documents. Implemented subset: 290 documents (90 gold plus 200 other referenced documents), 100 questions. |
 | Question mix | 35 basic, 25 semantic, 15 intra-document reasoning, 15 constrained, 10 info-not-found. |
 | Splits | 69 development, 15 validation, 16 test. |
 | Multi-document coverage | Zero questions have more than one expected document; current results do not validate multi-document retrieval. |
