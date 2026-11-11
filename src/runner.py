@@ -2,23 +2,26 @@
 
 import argparse
 from pathlib import Path
+from time import perf_counter
 
 from adaptive_retrieval import build_subset, check_subset, demo, prepare_subset
 from adaptive_retrieval.chunking import (
     chunk_documents, fit_chunks_to_token_limit, load_chunks, write_chunks,
 )
 from adaptive_retrieval.data import DEFAULT_CORPUS, load_documents
-from adaptive_retrieval.embedding import MiniLMEmbedder
+from adaptive_retrieval.embedding import LocalEmbedder
 from adaptive_retrieval.evaluate import format_summary, run_evaluation
 from adaptive_retrieval.interactive import SearchSession, run_interactive
 from adaptive_retrieval.paths import (
     FULL_DOCUMENTS_DIR, PROCESSED_DIR, RESULTS_DIR, SUBSET_DOCUMENTS_DIR,
 )
 from adaptive_retrieval.vector_index import file_sha256, write_index
+from adaptive_retrieval.model_store import download_models
+from adaptive_retrieval.rag_cli import run_rag
 
 
 DEFAULT_CHUNKS = PROCESSED_DIR / "chunks.jsonl"
-DEFAULT_INDEX = PROCESSED_DIR / "minilm_index.jsonl"
+DEFAULT_INDEX = PROCESSED_DIR / "qwen_index.jsonl"
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -27,6 +30,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     sample = commands.add_parser("demo", help="Search synthetic sample documents without a model")
     sample.add_argument("question", nargs="?", default="reset password")
+    commands.add_parser("download-models", help="Download pinned Qwen models for offline use")
 
     prepare = commands.add_parser("prepare-subset", help="Prepare the checked-in 100-question subset")
     prepare.add_argument("--root", type=Path, default=SUBSET_DOCUMENTS_DIR)
@@ -45,13 +49,13 @@ def create_parser() -> argparse.ArgumentParser:
     chunk.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     chunk.add_argument("--out", type=Path, default=DEFAULT_CHUNKS)
     chunk.add_argument("--strategy", choices=("paragraph", "fixed"), default="paragraph")
-    chunk.add_argument("--max-words", type=int, default=120)
-    chunk.add_argument("--overlap-words", type=int, default=20)
+    chunk.add_argument("--max-words", type=int, default=240)
+    chunk.add_argument("--overlap-words", type=int, default=40)
 
     embed = commands.add_parser("embed", help="Encode chunks locally and save a searchable index")
     embed.add_argument("--chunks", type=Path, default=DEFAULT_CHUNKS)
     embed.add_argument("--out", type=Path, default=DEFAULT_INDEX)
-    embed.add_argument("--batch-size", type=int, default=32)
+    embed.add_argument("--batch-size", type=int, default=8)
 
     search = commands.add_parser("search", help="Find relevant chunks; does not generate an answer")
     search.add_argument("question")
@@ -73,6 +77,21 @@ def create_parser() -> argparse.ArgumentParser:
     interactive.add_argument("--index", type=Path, default=DEFAULT_INDEX)
     interactive.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     interactive.add_argument("--top-k", type=int, default=3)
+    for name, help_text in (
+        ("ask", "Answer one question with citations/refusal and live metrics"),
+        ("rag", "Persistent RAG session: reuse models and inspect evidence"),
+    ):
+        rag = commands.add_parser(name, help=help_text)
+        if name == "ask":
+            rag.add_argument("question")
+            rag.add_argument("--json", action="store_true", help="Print a structured result")
+        rag.add_argument("--index", type=Path, default=DEFAULT_INDEX)
+        rag.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
+        rag.add_argument("--top-k", type=int, choices=range(1, 21), default=5)
+        rag.add_argument("--max-new-tokens", type=int, default=512)
+        rag.add_argument("--max-prompt-tokens", type=int, default=4096)
+        rag.add_argument("--show-sources", action="store_true")
+        rag.add_argument("--trace", type=Path, help="Append results to this JSONL path")
     return parser
 
 
@@ -82,6 +101,8 @@ def main(argv: list[str] | None = None) -> None:
     try:
         if args.command == "demo":
             demo.main([args.question])
+        elif args.command == "download-models":
+            download_models()
         elif args.command == "prepare-subset":
             prepare_subset.main(["--root", str(args.root), "--out", str(args.out)])
         elif args.command == "build-subset":
@@ -108,11 +129,22 @@ def main(argv: list[str] | None = None) -> None:
             })
             print(f"Parsed {len(documents)} documents into {len(chunks)} chunks: {args.out}")
         elif args.command == "embed":
+            started = perf_counter()
             metadata, chunks = load_chunks(args.chunks)
-            embedder = MiniLMEmbedder(batch_size=args.batch_size)
+            embedder = LocalEmbedder(batch_size=args.batch_size)
             fitted_chunks = fit_chunks_to_token_limit(
                 chunks, embedder.tokenizer, embedder.max_input_tokens,
             )
+            print(f"Embedding on {embedder.device}: {len(fitted_chunks)} passages", flush=True)
+            last_report = perf_counter()
+
+            def progress(done, total):
+                nonlocal last_report
+                now = perf_counter()
+                if now - last_report >= 5 or done == total:
+                    print(f"Embedded {done}/{total} passages ({now - started:.1f}s)", flush=True)
+                    last_report = now
+
             write_index(
                 args.out, fitted_chunks, embedder,
                 corpus_sha256=metadata["corpus_sha256"],
@@ -120,6 +152,7 @@ def main(argv: list[str] | None = None) -> None:
                 max_words=metadata["max_words"],
                 overlap_words=metadata["overlap_words"],
                 batch_size=args.batch_size,
+                on_progress=progress,
             )
             print(
                 f"Embedded {len(fitted_chunks)} model-safe pieces from {len(chunks)} "
@@ -139,7 +172,9 @@ def main(argv: list[str] | None = None) -> None:
         elif args.command in {"interactive", "chat"}:
             session = SearchSession(args.index, args.corpus)
             run_interactive(session, args.top_k)
-    except (FileNotFoundError, ValueError, RuntimeError, KeyError) as exc:
+        elif args.command in {"ask", "rag"}:
+            run_rag(args)
+    except (FileNotFoundError, ValueError, RuntimeError, KeyError, ImportError) as exc:
         parser.exit(2, f"Error: {exc}\n")
 
 
