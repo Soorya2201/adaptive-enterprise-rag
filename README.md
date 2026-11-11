@@ -49,10 +49,10 @@ Question> /sources
 Question> /quit
 ```
 
-`/sources` shows each full retrieved passage, rank, cosine score, source path,
+`/sources` shows each full retrieved passage, rank, retrieval score, source path,
 chunk ID, and original character offsets. It also shows which passages were
 actually sent to the generator. `--show-sources` prints them after every answer.
-Cosine scores measure similarity; they are **not confidence probabilities**.
+Retrieval scores are **not confidence probabilities**.
 
 For one question or a machine-readable result:
 
@@ -75,13 +75,19 @@ is rejected as incomplete. The CLI's `--help` lists all commands.
 | --- | --- | --- |
 | Embedding | `Qwen/Qwen3-Embedding-0.6B`, 1024 dimensions | Sentence Transformers / PyTorch MPS |
 | Answer generation | `mlx-community/Qwen3-4B-Instruct-2507-4bit` | MLX on Apple Silicon |
-| Search | Exact cosine ranking of local vectors | Python |
+| Search | BM25S + FAISS exact with reciprocal rank fusion | Local CPU worker |
 
 Model revisions are pinned in `model_store.py`. Both documents and questions
 use the same embedding model; only questions receive its retrieval instruction.
 There is one default embedding model and one generator. Compatibility with old
 MiniLM indexes remains for historical runs, but the demo does not compare models.
 A larger vector dimension alone does not establish better retrieval quality.
+
+Hybrid retrieval is the default for `search`, `interactive`, `evaluate`, `ask`,
+and `rag`. It fuses up to 50 keyword and dense candidates. Pass
+`--retriever cosine` to use the original vector-only ranking. Hybrid scores
+are reciprocal rank fusion (RRF) values; compare ranks, not raw scores across
+retrieval modes.
 
 `data/processed/qwen_index.jsonl` stores vectors together with text and source
 metadata. A separate vector database is unnecessary for this small corpus.
@@ -141,6 +147,22 @@ python -m unittest discover -s src/tests -v
 The retrieval-only `interactive` command supports `/doc N`, `/top N` and `/quit`;
 `chat` is its alias. Use **`rag`** for generated answers.
 
+### Source-removal rehearsal
+
+To show whether an answer depends on its source, first ask the rollback question
+above on the normal corpus. Then create a separate corpus and index without the
+document containing the restore-time fact:
+
+```bash
+python src/runner.py ablate dsid_c6a6396159964deeb021d646eaaf2b0c
+python src/runner.py ask "For a customer upgrading a private deployment in their own cloud environment, what restore time did support say is typical if the upgrade fails and a rollback is needed (assuming snapshots were taken)?" --corpus data/processed/ablation_demo/corpus.jsonl --index data/processed/ablation_demo/index.jsonl --show-sources
+```
+
+`ablate` removes that document and all its indexed passages without changing
+the original files or recomputing embeddings. It refuses to overwrite an
+existing ablation output directory. The expected demo behavior is a refusal
+when the needed fact is absent; inspect the retrieved passages and reason.
+
 The existing `evaluate` command scores document retrieval on the labeled
 questions (Hit@5 and MRR), saves results under `results/`, and does not measure
 answer correctness. Its historical MiniLM results do not describe this new Qwen
@@ -160,6 +182,8 @@ uses development questions; it is not a held-out evaluation.
 | `src/adaptive_retrieval/embedding.py` | Document and query embeddings |
 | `src/adaptive_retrieval/vector_index.py` | Local vector storage and cosine search |
 | `src/adaptive_retrieval/interactive.py` | Reusable search session and corpus checks |
+| `src/adaptive_retrieval/hybrid_search.py` | Hybrid keyword and vector retrieval |
+| `src/adaptive_retrieval/ablation.py` | Separate source-removal corpus/index pair |
 | `src/adaptive_retrieval/generation.py` | Context budget, Qwen generation, citation checks |
 | `src/adaptive_retrieval/pipeline.py` | Connects retrieval, generation, checking and metrics |
 | `src/adaptive_retrieval/rag_cli.py` | Presentation output, interactive loop and traces |

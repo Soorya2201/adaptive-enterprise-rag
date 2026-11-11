@@ -151,7 +151,8 @@ def run_interactive(
             output(f"\nRetrieved {len(results)} passages in {perf_counter() - started:.2f}s")
             for number, (chunk, score) in enumerate(results, 1):
                 output("-" * width)
-                output(f"[{number}] Similarity: {score:.3f} | Document: {chunk.document_id}")
+                label = "RRF" if getattr(session, "score_type", "cosine") == "rrf" else "Similarity"
+                output(f"[{number}] {label}: {score:.3f} | Document: {chunk.document_id}")
                 output(f"Source: {chunk.path or chunk.source}")
                 output(f"Chunk: {chunk.id} | Characters: {chunk.start_char}:{chunk.end_char}")
                 output("")

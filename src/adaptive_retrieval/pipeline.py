@@ -61,6 +61,8 @@ class RagPipeline:
         return {
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             "question": question,
+            "retriever": getattr(self.session, "retriever", "cosine"),
+            "score_type": getattr(self.session, "score_type", "cosine"),
             "status": checked.status,
             "route": "single_pass" if checked.status == "answer" else "refusal",
             "answer": checked.answer,
@@ -84,6 +86,7 @@ class RagPipeline:
                 "top_k": top_k, "max_new_tokens": self.generator.max_new_tokens,
                 "max_prompt_tokens": self.generator.max_prompt_tokens,
                 "temperature": 0.0, "prompt_version": "midterm-v3",
+                "retriever": getattr(self.session, "retriever", "cosine"),
             },
             "metrics": {
                 **self.session.last_timings,

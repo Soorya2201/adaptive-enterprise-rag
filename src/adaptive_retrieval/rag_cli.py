@@ -10,6 +10,7 @@ from time import perf_counter
 
 from .generation import QwenGenerator
 from .interactive import SearchSession
+from .hybrid_search import OptimizedSearchSession
 from .paths import DATA_DIR, PROJECT_ROOT
 from .pipeline import RagPipeline
 
@@ -29,7 +30,7 @@ def format_result(result: dict, *, show_sources: bool = False) -> str:
         ])
     lines.extend([
         "\nLIVE METRICS (startup excluded)",
-        f"Query embedding: {m['embedding_ms']:.0f} ms | vector search: {m['vector_search_ms']:.0f} ms",
+        f"Retriever: {result.get('retriever', 'cosine')} | embedding: {m['embedding_ms']:.0f} ms | vector search: {m['vector_search_ms']:.0f} ms",
         f"Retrieval: {m['retrieval_ms']:.0f} ms | prompt: {m['prompt_ms']:.0f} ms",
         f"Generation: {m['generation_ms']:.0f} ms | validation: {m['validation_ms']:.0f} ms",
         f"Total: {m['total_ms'] / 1000:.2f} s",
@@ -42,6 +43,8 @@ def format_result(result: dict, *, show_sources: bool = False) -> str:
             f"First token after generation starts: {m['first_token_ms']:.0f} ms | "
             f"decode: {m['decode_tokens_per_second']:.1f} tokens/s"
         )
+    if "hybrid_search_ms" in m:
+        lines.append(f"Hybrid search incl. worker: {m['hybrid_search_ms']:.0f} ms | lexical: {m['lexical_search_ms']:.0f} ms | fusion: {m['fusion_ms']:.0f} ms")
     lines.extend([
         "Tokens include instructions, JSON, citations, and stop tokens.",
         "Local compute profile; dollar cost and energy are not measured.",
@@ -56,7 +59,7 @@ def format_sources(result: dict) -> str:
     for rank, passage in enumerate(result["passages"], 1):
         label = passage["prompt_label"] or "omitted: context budget"
         lines.extend([
-            f"\n#{rank} [{label}] cosine={passage['score']:.3f}",
+            f"\n#{rank} [{label}] {result.get('score_type', 'cosine')}={passage['score']:.3f}",
             f"{passage['path'] or passage['source']} | {passage['id']}",
             f"chars {passage['start_char']}:{passage['end_char']}",
             passage["text"],
@@ -69,8 +72,16 @@ def run_rag(args) -> None:
         raise FileNotFoundError("RAG requires the source corpus; run 'prepare-subset'")
     started = perf_counter()
     print("Loading index and warming local models...", file=sys.stderr, flush=True)
+    session = OptimizedSearchSession(SearchSession(args.index, args.corpus), retriever=args.retriever)
+    try:
+        _run_rag_session(args, session, started)
+    finally:
+        session.close()
+
+
+def _run_rag_session(args, session: OptimizedSearchSession, started: float) -> None:
     pipeline = RagPipeline(
-        SearchSession(args.index, args.corpus),
+        session,
         QwenGenerator(max_new_tokens=args.max_new_tokens, max_prompt_tokens=args.max_prompt_tokens),
     )
     pipeline.warmup()

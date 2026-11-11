@@ -33,7 +33,7 @@ def load_questions(path: Path) -> list[dict]:
 
 
 def rank_documents(session: SearchSession, question: str) -> list[dict]:
-    """Rank every document by its best-scoring chunk; labels are per document."""
+    """Rank returned documents by their best-scoring chunk; labels are per document."""
     ranked: list[dict] = []
     seen: set[str] = set()
     for chunk, score in session.search(question, top_k=len(session.rows)):
@@ -93,6 +93,9 @@ def run_evaluation(session: SearchSession, questions_path: Path, out_dir: Path) 
             "questions_path": str(questions_path),
             "questions_sha256": file_sha256(questions_path),
             "index": session.metadata,
+            "retriever": getattr(session, "retriever", "cosine"),
+            "score_type": getattr(session, "score_type", "cosine"),
+            "candidate_depth": session.candidate_depth if getattr(session, "retriever", "cosine") == "hybrid" else None,
         },
         "questions": len(records),
         "scored": len(scored),
