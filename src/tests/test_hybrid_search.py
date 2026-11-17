@@ -45,6 +45,13 @@ class HybridSearchTests(unittest.TestCase):
                 self.assertEqual(session.search("apple", 3), base.search("apple", 3))
                 self.assertIsNone(session.process)
 
+    def test_unmatched_keywords_do_not_boost_unrelated_documents(self):
+        with TemporaryDirectory() as directory:
+            base = self.make_session(directory)
+            # The fake query vector points to banana, but "kiwi" matches no passage.
+            with OptimizedSearchSession(base, "hybrid", candidate_depth=1) as session:
+                self.assertEqual(session.search("kiwi", 1)[0][0].document_id, "banana-doc")
+
     def test_fusion_provenance_reuse_and_cleanup(self):
         with TemporaryDirectory() as directory:
             base = self.make_session(directory)

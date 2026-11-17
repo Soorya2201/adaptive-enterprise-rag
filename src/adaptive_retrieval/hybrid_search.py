@@ -41,8 +41,11 @@ def _search_worker(connection, texts, vectors, threads):
                 _, dense_ids = dense.search(query, min(depth, dense.ntotal))
                 searched = perf_counter()
                 query_tokens = re.findall(r"\w+", question.casefold())
-                scores = lexical.get_scores(query_tokens) if query_tokens else np.zeros(len(texts))
-                lexical_ids = np.lexsort((np.arange(len(texts)), -scores))[:depth]
+                lexical_scores = lexical.get_scores(query_tokens) if query_tokens else np.zeros(len(texts))
+                matching_ids = np.flatnonzero(lexical_scores > 0)
+                lexical_ids = matching_ids[
+                    np.lexsort((matching_ids, -lexical_scores[matching_ids]))[:depth]
+                ]
                 lexical_done = perf_counter()
                 scores = {}
                 for ranking in (dense_ids[0], lexical_ids):

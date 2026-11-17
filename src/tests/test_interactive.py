@@ -7,6 +7,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from adaptive_retrieval.chunking import chunk_documents
+from adaptive_retrieval.embedding import LocalEmbedder
 from adaptive_retrieval.interactive import SearchSession, run_interactive
 from adaptive_retrieval.models import Document
 from adaptive_retrieval.vector_index import file_sha256, write_index
@@ -96,6 +97,23 @@ class InteractiveTests(unittest.TestCase):
             corpus.write_text("changed\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "corpus changed"):
                 SearchSession(Path(directory) / "index.jsonl", corpus, embedder=FakeEmbedder())
+
+    def test_model_and_query_instruction_mismatches_are_rejected(self):
+        with TemporaryDirectory() as directory:
+            self.make_session(directory)
+            root = Path(directory)
+            with self.assertRaisesRegex(ValueError, "different embedding model"):
+                SearchSession(root / "index.jsonl", root / "corpus.jsonl", embedder=LocalEmbedder())
+            # Even equal-dimensional vectors are incompatible when their
+            # query instruction differs from the one used to define the index.
+            lines = (root / "index.jsonl").read_text().splitlines()
+            header = json.loads(lines[0])
+            header["_meta"]["model"] = LocalEmbedder().model_name
+            header["_meta"]["query_instruction"] = "an obsolete instruction"
+            lines[0] = json.dumps(header)
+            (root / "index.jsonl").write_text("\n".join(lines) + "\n")
+            with self.assertRaisesRegex(ValueError, "different query instruction"):
+                SearchSession(root / "index.jsonl", root / "corpus.jsonl", embedder=LocalEmbedder())
 
 
 if __name__ == "__main__":
