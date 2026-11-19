@@ -16,6 +16,7 @@ demo = [
     "mlx-lm>=0.26.2,<1; sys_platform == 'darwin' and platform_machine == 'arm64'",
 ]
 hybrid = ["numpy>=1.25,<3", "faiss-cpu==1.15.1", "bm25s==0.2.14"]
+evaluation = ["transformers>=4.41,<6", "torch>=2.6,<3", "huggingface-hub>=0.24,<2", "safetensors>=0.4"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
