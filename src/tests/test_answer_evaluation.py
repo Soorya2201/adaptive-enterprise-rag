@@ -1,4 +1,6 @@
 import json
+import contextlib
+import io
 from pathlib import Path
 import sys
 import tempfile
@@ -76,8 +78,10 @@ class AnswerEvaluationTests(unittest.TestCase):
             args = ["--questions", str(root / "questions"), "--traces", str(root / "traces"),
                     "--judgments", str(root / "judgments"), "--out", str(root / "report.json")]
             main(args)
-            self.assertEqual(json.loads((root / "report.json").read_text())["overall"]["questions"], 2)
-            with self.assertRaises(SystemExit):
+            saved = json.loads((root / "report.json").read_text())
+            self.assertEqual(saved["overall"]["questions"], 2)
+            self.assertEqual(len(saved["run"]["inputs"]["questions"]["sha256"]), 64)
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                 main(args)
 
 

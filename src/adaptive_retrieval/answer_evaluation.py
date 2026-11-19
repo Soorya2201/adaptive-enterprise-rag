@@ -5,6 +5,8 @@ No model or network access is required to score saved RAG traces.
 """
 
 import argparse
+from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 import random
@@ -170,6 +172,15 @@ def main(argv=None):
             result["baseline"] = report(baseline)
             result["paired_comparison"] = paired_comparison(rows, baseline)
         result["per_question"] = rows
+        result["run"] = {
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            "evaluator_version": 1,
+            "inputs": {
+                name: {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+                for name in ("questions", "traces", "judgments", "baseline_traces", "baseline_judgments")
+                if (path := getattr(args, name)) is not None
+            },
+        }
         args.out.parent.mkdir(parents=True, exist_ok=True)
         with args.out.open("x", encoding="utf-8") as stream:
             stream.write(json.dumps(result, indent=2, allow_nan=False) + "\n")

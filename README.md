@@ -1,5 +1,7 @@
 # Cost-Aware Adaptive Retrieval for Enterprise Support
 
+Answer-quality evaluation: see [offline correctness, refusal, and paired-comparison instructions](docs/ANSWER_EVALUATION.md).
+
 Team 13's midterm demo is a working **local RAG pipeline**: retrieve enterprise
 passages, generate an answer with citations or refuse, and display measured
 latency and token usage. The cost-aware contribution at this stage is
