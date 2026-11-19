@@ -1,0 +1,2 @@
+benchmarks/final300/*.json text eol=lf
+benchmarks/final300/*.jsonl text eol=lf

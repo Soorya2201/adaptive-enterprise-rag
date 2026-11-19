@@ -13,7 +13,7 @@ import random
 from statistics import mean
 
 
-def read_records(path: Path) -> list[dict]:
+def read_records(path: Path, *, allow_empty=False) -> list[dict]:
     records = []
     for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip():
@@ -22,7 +22,7 @@ def read_records(path: Path) -> list[dict]:
         if not isinstance(record, dict):
             raise ValueError(f"Expected an object at {path}:{number}")
         records.append(record)
-    if not records:
+    if not records and not allow_empty:
         raise ValueError(f"Empty input: {path}")
     return records
 
@@ -35,6 +35,12 @@ def keyed(records: list[dict]) -> dict[str, dict]:
             raise ValueError(f"Missing or duplicate question_id: {key!r}")
         result[key] = record
     return result
+
+
+def trace_digest(trace: dict) -> str:
+    """Bind a judgment to the answer and supplied evidence, independent of timing."""
+    payload = {key: trace.get(key) for key in ("question", "status", "answer", "passages", "citations")}
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
 def score_answers(questions: list[dict], traces: list[dict], judgments: list[dict]) -> list[dict]:
@@ -80,6 +86,8 @@ def score_answers(questions: list[dict], traces: list[dict], judgments: list[dic
             # Bind manual/model judgments to the precise output being scored.
             if label.get("answer") != answer or not label.get("judge"):
                 raise ValueError(f"Judgment needs matching answer and judge: {key}")
+            if label.get("trace_sha256") and label["trace_sha256"] != trace_digest(trace):
+                raise ValueError(f"Judgment context differs from trace: {key}")
             if "correct" in label and type(label["correct"]) is not bool:
                 raise ValueError(f"correct must be boolean: {key}")
             if label.get("nli") not in {None, "entailment", "neutral", "contradiction"}:
@@ -87,12 +95,21 @@ def score_answers(questions: list[dict], traces: list[dict], judgments: list[dic
         answerable = bool(question["expected_doc_ids"])
         refused = status == "refusal"
         correct = (not answerable) if refused else (False if not answerable else label.get("correct"))
+        gold_docs = set(question["expected_doc_ids"])
+        passages = trace.get("passages")
+        measurable = isinstance(passages, list) and all(isinstance(p.get("document_id"), str) for p in passages)
+        retrieved_docs = {p["document_id"] for p in passages} if measurable else set()
         rows.append({
             "question_id": key, "split": question.get("split", "unspecified"),
             "question_type": question.get("question_type", "unspecified"),
             "answerable": answerable, "refused": refused,
             "correct": correct, "refusal_correct": refused == (not answerable),
             "nli": label.get("nli") if not refused else None,
+            "judgment_kind": label.get("judgment_kind", "manual") if label else "decision_only",
+            "evaluation_group": question.get("evaluation_group", key),
+            "document_scope": "multi" if len(gold_docs) > 1 else "single" if gold_docs else "unanswerable",
+            "final_passage_gold_recall": len(gold_docs & retrieved_docs) / len(gold_docs) if measurable and gold_docs else None,
+            "final_passage_all_gold_hit": gold_docs <= retrieved_docs if measurable and gold_docs else None,
         })
     return rows
 
@@ -113,13 +130,16 @@ def summarize(rows: list[dict]) -> dict:
         "unanswerable_refusal_recall": average([int(row["refused"]) for row in unanswerable]),
         "answerable_false_refusal_rate": average([int(row["refused"]) for row in answerable]),
         "nli_scored": len(nli),
+        "automatic_correctness_scored": sum(row.get("judgment_kind") == "automatic_nli_proxy" for row in judged),
+        "final_passage_gold_recall": average([row["final_passage_gold_recall"] for row in rows if row["final_passage_gold_recall"] is not None]),
+        "final_passage_all_gold_hit": average([int(row["final_passage_all_gold_hit"]) for row in rows if row["final_passage_all_gold_hit"] is not None]),
         "nli_entailment_rate": average([int(row["nli"] == "entailment") for row in nli]),
     }
 
 
 def report(rows: list[dict]) -> dict:
     result = {"overall": summarize(rows)}
-    for field in ("split", "question_type"):
+    for field in ("split", "question_type", "document_scope"):
         groups = {}
         for row in rows:
             groups.setdefault(str(row[field]), []).append(row)
@@ -137,17 +157,29 @@ def paired_comparison(candidate: list[dict], baseline: list[dict], *, samples=20
         raise ValueError("Paired comparison requires identical nonempty question sets")
     if samples < 100:
         raise ValueError("Use at least 100 bootstrap samples")
+    groups = {}
+    for key in sorted(left):
+        group = left[key].get("evaluation_group", key)
+        if group != right[key].get("evaluation_group", key) or left[key]["answerable"] != right[key]["answerable"]:
+            raise ValueError("Paired question metadata differs")
+        groups.setdefault(group, []).append(key)
     result = {}
     for metric in ("correct", "refusal_correct"):
         if any(row[metric] is None for row in candidate + baseline):
             raise ValueError("Paired correctness comparison requires complete judgments")
         differences = [int(left[key][metric]) - int(right[key][metric]) for key in sorted(left)]
         rng = random.Random(seed)
-        estimates = sorted(mean(rng.choices(differences, k=len(differences))) for _ in range(samples))
+        group_ids = sorted(groups)
+        estimates = []
+        for _ in range(samples):
+            sampled = [key for group in rng.choices(group_ids, k=len(group_ids)) for key in groups[group]]
+            estimates.append(mean(int(left[key][metric]) - int(right[key][metric]) for key in sampled))
+        estimates.sort()
         result[metric] = {
             "delta": mean(differences),
             "ci95": [estimates[int((samples - 1) * .025)], estimates[int((samples - 1) * .975)]],
             "questions": len(differences), "samples": samples, "seed": seed,
+            "resampling_groups": len(groups),
         }
     return result
 
@@ -165,10 +197,10 @@ def main(argv=None):
         if args.baseline_judgments and not args.baseline_traces:
             raise ValueError("--baseline-judgments requires --baseline-traces")
         questions = read_records(args.questions)
-        rows = score_answers(questions, read_records(args.traces), read_records(args.judgments) if args.judgments else [])
+        rows = score_answers(questions, read_records(args.traces), read_records(args.judgments, allow_empty=True) if args.judgments else [])
         result = report(rows)
         if args.baseline_traces:
-            baseline = score_answers(questions, read_records(args.baseline_traces), read_records(args.baseline_judgments) if args.baseline_judgments else [])
+            baseline = score_answers(questions, read_records(args.baseline_traces), read_records(args.baseline_judgments, allow_empty=True) if args.baseline_judgments else [])
             result["baseline"] = report(baseline)
             result["paired_comparison"] = paired_comparison(rows, baseline)
         result["per_question"] = rows
