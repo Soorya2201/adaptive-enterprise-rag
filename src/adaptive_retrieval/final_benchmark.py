@@ -106,7 +106,10 @@ def build_benchmark(source: Path, legacy_path: Path, archive: Path, out: Path):
                         for entry in entries]
             text = variants[0]["text"] if len(variants) == 1 else "\n\n".join(
                 f"SOURCE VARIANT: {v['path']}\n{v['text']}" for v in variants)
-            documents[doc_id] = {"doc_id": doc_id, "path": entries[0].filename,
+            # Offsets in a combined record refer to that record, not to the
+            # first original file. Never attribute a later variant to its sibling.
+            provenance = entries[0].filename if len(entries) == 1 else f"combined-source-variants/{doc_id}"
+            documents[doc_id] = {"doc_id": doc_id, "path": provenance,
                                  "source": entries[0].filename.split("/")[0],
                                  "source_paths": [v["path"] for v in variants], "text": text}
     # Mine two deterministic lexical distractors within this documented corpus.
@@ -118,7 +121,7 @@ def build_benchmark(source: Path, legacy_path: Path, archive: Path, out: Path):
         candidates.sort(key=lambda key: (-sum(min(terms[key][word], 3) for word in words), key))
         question["hard_negative_ids"] = candidates[:2]
     manifest = {
-        "version": 1, "seed": SEED,
+        "version": 2, "seed": SEED,
         "source": "https://github.com/onyx-dot-app/EnterpriseRAG-Bench/releases/tag/v1.0.0",
         "inputs": {"source_questions_canonical_sha256": canonical_hash(questions),
                    "legacy_questions_canonical_sha256": canonical_hash(legacy),
@@ -175,7 +178,7 @@ def main(argv=None):
     parser.add_argument("--source", type=Path, default=Path("data/subset_documents/questions.jsonl"))
     parser.add_argument("--legacy", type=Path, default=Path("data/subset_documents/questions_100.jsonl"))
     parser.add_argument("--archive", type=Path, default=Path("data/all_documents.zip"))
-    parser.add_argument("--out", type=Path, default=Path("data/processed/final300-v1"))
+    parser.add_argument("--out", type=Path, default=Path("data/processed/final300-v2"))
     parser.add_argument("--verify", action="store_true")
     args = parser.parse_args(argv)
     try:

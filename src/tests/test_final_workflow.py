@@ -155,6 +155,8 @@ class BenchmarkTests(unittest.TestCase):
                 manifest = build_benchmark(source, legacy, archive, root / "out")
             self.assertEqual(manifest["multi_document_questions"], 1)
             self.assertEqual(len(manifest["duplicate_id_documents"]["d1"]), 2)
+            docs = [json.loads(line) for line in (root / "out" / "corpus.jsonl").read_text().splitlines()]
+            self.assertEqual(docs[0]["path"], "combined-source-variants/d1")
             verify_benchmark(root / "out")
             with (root / "out" / "questions.jsonl").open("a") as stream:
                 stream.write("\n")

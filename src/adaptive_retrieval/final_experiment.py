@@ -3,12 +3,13 @@
 import argparse
 from datetime import datetime, timezone
 import json
+import importlib.metadata
 from pathlib import Path
 import platform
 from time import perf_counter
 
 from .answer_evaluation import read_records
-from .final_benchmark import verify_benchmark
+from .final_benchmark import canonical_hash, verify_benchmark
 from .generation import QwenGenerator
 from .hybrid_search import OptimizedSearchSession
 from .interactive import SearchSession
@@ -84,7 +85,7 @@ def collect(pipeline, judge, questions, destination: Path, *, mode, protocol):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--benchmark", type=Path, default=Path("data/processed/final300-v1"))
+    parser.add_argument("--benchmark", type=Path, default=Path("data/processed/final300-v2"))
     parser.add_argument("--index", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--freeze", action="store_true", help="Freeze settings without running models")
@@ -107,10 +108,20 @@ def main(argv=None):
             index_metadata = json.loads(stream.readline())["_meta"]
         if index_metadata["corpus_sha256"] != file_sha256(args.benchmark / "corpus.jsonl"):
             raise ValueError("Index was not built from the frozen benchmark corpus")
+        package_versions = {}
+        for name in ("torch", "transformers", "mlx-lm", "sentence-transformers", "faiss-cpu", "bm25s"):
+            try:
+                package_versions[name] = importlib.metadata.version(name)
+            except importlib.metadata.PackageNotFoundError:
+                package_versions[name] = None
         settings = {"benchmark_manifest_sha256": file_sha256(args.benchmark / "manifest.json"),
                     "index_sha256": file_sha256(args.index), "split": args.split,
                     "retriever": args.retriever, "top_k": args.top_k, "retry_top_k": args.retry_top_k,
                     "threshold": args.threshold, "max_new_tokens": 512, "max_prompt_tokens": 4096,
+                    "selected_questions_canonical_sha256": canonical_hash(questions),
+                    "package_versions": package_versions,
+                    "implementation_sha256": {name: file_sha256(Path(__file__).with_name(name + ".py"))
+                                              for name in ("final_experiment", "nli", "pipeline", "generation", "embedding", "interactive", "hybrid_search", "vector_index")},
                     "generation_revisions": MODEL_REVISIONS, "nli_revision": NLI_REVISION,
                     "policy": "nli-gated fixed vs one bounded wider-context retry v1"}
         if args.freeze:
@@ -125,6 +136,8 @@ def main(argv=None):
         protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
         if protocol["settings"] != settings:
             raise ValueError("Run settings/input hashes differ from frozen protocol")
+        if canonical_hash(read_records(args.out / "questions.jsonl")) != canonical_hash(questions):
+            raise ValueError("Exported frozen questions were modified")
         if platform.system() != "Darwin" or platform.machine() != "arm64":
             raise RuntimeError("Frozen Qwen experiment requires the team's Apple Silicon/MLX runtime; no test run was started")
         destination = args.out / f"{args.mode}.jsonl"

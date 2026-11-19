@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "seed": 13,
   "source": "https://github.com/onyx-dot-app/EnterpriseRAG-Bench/releases/tag/v1.0.0",
   "inputs": {
@@ -841,5 +841,5 @@
     "dsid_fefb12469132405dae564173c0fe1605": "2607351f9b32a14f4b9b9e0fcd3e6bdd6da27b873de8481e4cb6221cbc2b463b"
   },
   "questions_sha256": "0d0f674d81a602424f02f2c8175a84ef571aa0f03d0cf5e00991a88cf84761ee",
-  "corpus_sha256": "534faf8833030a931614d09c05ef3b194387bd4671ef4f2dc5a62e3d1a0be2e8"
+  "corpus_sha256": "0193e5f602e4fd35109d146178963e7d7a62b08a42152f121d40a7a756f95b9f"
 }
