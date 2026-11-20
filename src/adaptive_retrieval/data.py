@@ -1,6 +1,7 @@
 """Parse the evaluation corpus into the project's Document contract."""
 
 import json
+import re
 from pathlib import Path
 
 from .models import Document
@@ -8,6 +9,24 @@ from .paths import PROCESSED_DIR
 
 
 DEFAULT_CORPUS = PROCESSED_DIR / "subset_corpus.jsonl"
+
+
+# Some benchmark files store their body as an escaped string: line breaks are the
+# two characters backslash + n and quotes are backslash + quote.
+_ESCAPE = re.compile(r'''\\([\\nrt"'])''')
+_UNESCAPED = {"n": "\n", "r": "\r", "t": "\t", '"': '"', "'": "'", "\\": "\\"}
+
+
+def clean_document_text(text: str) -> str:
+    """Decode documents whose body is escaped; leave all other text unchanged.
+
+    A document counts as escaped when it has more literal backslash-n sequences
+    than real line breaks. Documents that merely mention escapes (HTTP or SSE
+    examples such as a literal backslash-n) keep them.
+    """
+    if text.count("\\n") <= text.count("\n"):
+        return text
+    return _ESCAPE.sub(lambda match: _UNESCAPED[match.group(1)], text)
 
 
 def load_documents(corpus_path: Path = DEFAULT_CORPUS) -> list[Document]:

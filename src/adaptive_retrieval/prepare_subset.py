@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from .data import clean_document_text
 from .paths import PROCESSED_DIR, SUBSET_DOCUMENTS_DIR
 
 
@@ -51,7 +52,7 @@ def prepare_subset(root: Path, out: Path) -> tuple[int, int]:
                 "path": relative_path.as_posix(),
                 "is_gold": doc_id in gold_ids,
                 "mined_for": mined_for.get(doc_id, []) if doc_id not in gold_ids else [],
-                "text": path.read_text(encoding="utf-8"),
+                "text": clean_document_text(path.read_text(encoding="utf-8")),
             }) + "\n")
     return len(questions), len(required_ids)
 

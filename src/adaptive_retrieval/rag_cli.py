@@ -8,11 +8,26 @@ import subprocess
 import sys
 from time import perf_counter
 
+from .expansion import MlxExpander, OllamaExpander
 from .generation import QwenGenerator
 from .interactive import SearchSession
-from .hybrid_search import OptimizedSearchSession
+from .hybrid_search import EXPANDING_RETRIEVERS, OptimizedSearchSession
 from .paths import DATA_DIR, PROJECT_ROOT
 from .pipeline import RagPipeline
+
+
+def open_search_session(args, generator: QwenGenerator | None = None) -> OptimizedSearchSession:
+    """Build the selected retriever; only expanding modes create an expander."""
+    expander = None
+    if args.retriever in EXPANDING_RETRIEVERS:
+        if args.expander == "ollama":
+            expander = OllamaExpander(args.expansion_model)
+        else:
+            # Reuse the answer generator so only one MLX model is loaded.
+            expander = MlxExpander(generator or QwenGenerator())
+    return OptimizedSearchSession(
+        SearchSession(args.index, args.corpus), retriever=args.retriever, expander=expander,
+    )
 
 
 def format_result(result: dict, *, show_sources: bool = False) -> str:
@@ -30,7 +45,7 @@ def format_result(result: dict, *, show_sources: bool = False) -> str:
         ])
     lines.extend([
         "\nLIVE METRICS (startup excluded)",
-        f"Retriever: {result.get('retriever', 'cosine')} | embedding: {m['embedding_ms']:.0f} ms | vector search: {m['vector_search_ms']:.0f} ms",
+        f"Retriever: {result.get('retriever', 'cosine')} | route: {result.get('route')} | embedding: {m.get('embedding_ms', 0):.0f} ms | vector search: {m.get('vector_search_ms', 0):.0f} ms",
         f"Retrieval: {m['retrieval_ms']:.0f} ms | prompt: {m['prompt_ms']:.0f} ms",
         f"Generation: {m['generation_ms']:.0f} ms | validation: {m['validation_ms']:.0f} ms",
         f"Total: {m['total_ms'] / 1000:.2f} s",
@@ -44,7 +59,20 @@ def format_result(result: dict, *, show_sources: bool = False) -> str:
             f"decode: {m['decode_tokens_per_second']:.1f} tokens/s"
         )
     if "hybrid_search_ms" in m:
-        lines.append(f"Hybrid search incl. worker: {m['hybrid_search_ms']:.0f} ms | lexical: {m['lexical_search_ms']:.0f} ms | fusion: {m['fusion_ms']:.0f} ms")
+        lines.append(
+            f"Search incl. worker: {m['hybrid_search_ms']:.0f} ms | lexical: "
+            f"{m['lexical_search_ms']:.0f} ms | fusion: {m.get('fusion_ms', 0):.0f} ms"
+        )
+    retrieval = result.get("retrieval") or {}
+    if retrieval.get("retriever") in {"hybrid_lamer", "adaptive"}:
+        if retrieval.get("gate_fired"):
+            lines.append(
+                f"Gate: expanded ({retrieval.get('gate_reason')}) | LameR: "
+                f"{m.get('expansion_ms', 0):.0f} ms, {m['expansion_input_tokens']}/"
+                f"{m['expansion_output_tokens']} tokens in/out"
+            )
+        else:
+            lines.append("Gate: dense and keyword search agree on the top document; no expansion")
     lines.extend([
         "Tokens include instructions, JSON, citations, and stop tokens.",
         "Local compute profile; dollar cost and energy are not measured.",
@@ -72,18 +100,35 @@ def run_rag(args) -> None:
         raise FileNotFoundError("RAG requires the source corpus; run 'prepare-subset'")
     started = perf_counter()
     print("Loading index and warming local models...", file=sys.stderr, flush=True)
-    session = OptimizedSearchSession(SearchSession(args.index, args.corpus), retriever=args.retriever)
+    generator = QwenGenerator(max_new_tokens=args.max_new_tokens, max_prompt_tokens=args.max_prompt_tokens)
+    session = open_search_session(args, generator)
     try:
-        _run_rag_session(args, session, started)
+        _run_rag_session(args, RagPipeline(session, generator), started)
     finally:
         session.close()
 
 
-def _run_rag_session(args, session: OptimizedSearchSession, started: float) -> None:
-    pipeline = RagPipeline(
-        session,
-        QwenGenerator(max_new_tokens=args.max_new_tokens, max_prompt_tokens=args.max_prompt_tokens),
-    )
+def run_rag_eval(args) -> None:
+    from .rag_eval import format_rag_summary, print_progress, run_rag_evaluation
+
+    if not args.corpus.is_file():
+        raise FileNotFoundError("RAG evaluation requires the source corpus; run 'prepare-subset'")
+    print("Loading index and warming local models...", file=sys.stderr, flush=True)
+    generator = QwenGenerator(max_new_tokens=args.max_new_tokens, max_prompt_tokens=args.max_prompt_tokens)
+    session = open_search_session(args, generator)
+    try:
+        run_dir, summary = run_rag_evaluation(
+            RagPipeline(session, generator), args.questions, args.out_dir,
+            split=None if args.split == "all" else args.split, limit=args.limit,
+            top_k=args.top_k, progress=print_progress,
+        )
+    finally:
+        session.close()
+    print(format_rag_summary(summary))
+    print(f"\nSaved per-question results and summary: {run_dir}")
+
+
+def _run_rag_session(args, pipeline: RagPipeline, started: float) -> None:
     pipeline.warmup()
     pipeline.startup["total_startup_ms"] = (perf_counter() - started) * 1000
     print(

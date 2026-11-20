@@ -1,4 +1,4 @@
-"""One retrieval round followed by grounded generation and output validation."""
+"""Retrieval (one round, or two when the gate expands) then grounded generation."""
 
 from collections.abc import Callable
 from dataclasses import asdict
@@ -23,9 +23,14 @@ class RagPipeline:
         self.session.embedder.warmup()
         embedded = perf_counter()
         self.generator.warmup()
+        generated = perf_counter()
+        expander = getattr(self.session, "expander", None)
+        if expander is not None and getattr(self.session, "retriever", "") in {"hybrid_lamer", "adaptive"}:
+            expander.warmup()
         self.startup = {
             "embedding_load_and_warmup_ms": (embedded - started) * 1000,
-            "generator_load_and_warmup_ms": (perf_counter() - embedded) * 1000,
+            "generator_load_and_warmup_ms": (generated - embedded) * 1000,
+            "expander_load_and_warmup_ms": (perf_counter() - generated) * 1000,
         }
         self.ready = True
         return self.startup
@@ -58,13 +63,25 @@ class RagPipeline:
             checked = check_answer(generation, prompt.sources)
         finished = perf_counter()
         labels = {chunk.id: label for label, chunk in prompt.sources.items()}
+        retrieval = dict(getattr(self.session, "last_trace", {}) or {})
+        rounds = retrieval.get("retrieval_rounds", 1)
+        if checked.status != "answer":
+            route = "refusal"
+        else:
+            route = "second_pass" if rounds > 1 else "single_pass"
+        expansion_in = retrieval.get("expansion_input_tokens", 0)
+        expansion_out = retrieval.get("expansion_output_tokens", 0)
+        generation_tokens = (
+            (generation.prompt_tokens + generation.output_tokens) if generation else 0
+        )
         return {
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             "question": question,
             "retriever": getattr(self.session, "retriever", "cosine"),
             "score_type": getattr(self.session, "score_type", "cosine"),
             "status": checked.status,
-            "route": "single_pass" if checked.status == "answer" else "refusal",
+            "route": route,
+            "retrieval": retrieval,
             "answer": checked.answer,
             "reason": checked.reason,
             "citations": list(checked.citations),
@@ -87,6 +104,10 @@ class RagPipeline:
                 "max_prompt_tokens": self.generator.max_prompt_tokens,
                 "temperature": 0.0, "prompt_version": "midterm-v3",
                 "retriever": getattr(self.session, "retriever", "cosine"),
+                "expander": (
+                    getattr(getattr(self.session, "expander", None), "model_name", None)
+                    if getattr(self.session, "retriever", "") in {"hybrid_lamer", "adaptive"} else None
+                ),
             },
             "metrics": {
                 **self.session.last_timings,
@@ -103,8 +124,12 @@ class RagPipeline:
                 "output_tokens": generation.output_tokens if generation else 0,
                 "retrieved_chunks": len(passages),
                 "context_chunks": len(prompt.sources),
-                "retrieval_rounds": 1,
+                "retrieval_rounds": rounds,
+                "expansion_input_tokens": expansion_in,
+                "expansion_output_tokens": expansion_out,
+                "total_llm_tokens": generation_tokens + expansion_in + expansion_out,
                 "generation_calls": int(generation is not None),
+                "expansion_calls": len(retrieval.get("expansion_texts", [])),
                 "api_calls": 0,
                 "cost_usd": None,
             },

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import json
 import platform
 import re
+import unicodedata
 from time import perf_counter
 
 from .model_store import GENERATION_MODEL, model_snapshot
@@ -71,7 +72,7 @@ def prepare_prompt(
 ) -> PreparedPrompt:
     """Keep whole passages and their identities; never silently truncate facts."""
     if count_tokens(question) > 512:
-        raise ValueError("Question exceeds the demo limit of 512 generator tokens")
+        raise ValueError("Question exceeds the limit of 512 generator tokens")
     sources: dict[str, Chunk] = {}
     records: list[dict] = []
 
@@ -130,19 +131,76 @@ def check_answer(output: GenerationOutput, sources: dict[str, Chunk]) -> Checked
             return refuse("unknown_citation")
         if not isinstance(quote, str) or not 12 <= len(quote.strip()) <= 300:
             return refuse("invalid_quote")
-        # Normalize whitespace only; require verbatim words and punctuation.
-        if " ".join(quote.split()) not in " ".join(sources[label].text.split()):
-            return refuse("quote_not_in_source")
         chunk = sources[label]
+        match = quote_match(quote, chunk.text)
+        if match is None:
+            return refuse("quote_not_in_source")
         checked.append({
-            "source": label, "quote": quote, "chunk_id": chunk.id,
+            "source": label, "quote": quote, "quote_match": match, "chunk_id": chunk.id,
             "document_id": chunk.document_id, "path": chunk.path or chunk.source,
             "start_char": chunk.start_char, "end_char": chunk.end_char,
         })
-    inline = set(re.findall(r"\[(S\d+)\]", answer))
-    if not inline or inline != {citation["source"] for citation in checked}:
+    inline = citation_markers(answer)
+    # Every inline marker needs a verified quote; a quoted source may lack a marker.
+    if not inline or not inline <= {citation["source"] for citation in checked}:
         return refuse("citation_markers_do_not_match")
     return CheckedAnswer("answer", answer.strip(), tuple(checked), "citation_quotes_valid")
+
+
+MIN_QUOTE_SEGMENT = 12
+_CHARACTER_MAP = str.maketrans({
+    "\u2018": "'", "\u2019": "'", "\u201a": "'", "\u201b": "'",
+    "\u201c": '"', "\u201d": '"', "\u201e": '"', "\u201f": '"',
+    "\u2010": "-", "\u2011": "-", "\u2012": "-", "\u2013": "-", "\u2014": "-", "\u2212": "-",
+    "\u00a0": " ", "`": "", "*": "", "_": "",
+})
+# Bullets, numbers, headings and block quotes at line starts.
+_LINE_MARKUP = re.compile(r"^[ \t]*(?:[-+*\u2022]|\d{1,3}[.)]|#{1,6}|>)[ \t]+", re.MULTILINE)
+_ELLIPSIS = re.compile(r"\.{3,}|\u2026")
+_MARKER_GROUP = re.compile(r"\[\s*(S\d+(?:\s*[,;]\s*S\d+)*)\s*\]")
+
+
+def canonical_text(text: str) -> str:
+    """Remove formatting that a model may drop when quoting; keep every word.
+
+    Strips list, heading and quote markers at line starts and Markdown
+    emphasis/code characters, unifies typographic quotes and dashes,
+    lowercases and collapses whitespace.
+    """
+    text = unicodedata.normalize("NFKC", text)
+    text = _LINE_MARKUP.sub("", text).translate(_CHARACTER_MAP)
+    return " ".join(text.casefold().split())
+
+
+def quote_match(quote: str, source: str) -> str | None:
+    """Return how ``quote`` matches ``source``, or None if it does not.
+
+    ``exact``: verbatim after whitespace normalization. ``formatting``: equal
+    after ``canonical_text``. ``ellipsis``: segments joined by "..." each have at
+    least 12 characters and occur in order. Changed or added words never match.
+    """
+    if " ".join(quote.split()) in " ".join(source.split()):
+        return "exact"
+    source = canonical_text(source)
+    segments = [canonical_text(part).strip(" .,;:'\"") for part in _ELLIPSIS.split(quote)]
+    segments = [segment for segment in segments if segment]
+    if not segments or any(len(segment) < MIN_QUOTE_SEGMENT for segment in segments):
+        return None
+    position = 0
+    for segment in segments:
+        found = source.find(segment, position)
+        if found < 0:
+            return None
+        position = found + len(segment)
+    return "formatting" if len(segments) == 1 else "ellipsis"
+
+
+def citation_markers(answer: str) -> set[str]:
+    """Source labels cited inline as ``[S1]``, ``[S1][S2]`` or ``[S1, S2]``."""
+    return {
+        label for group in _MARKER_GROUP.findall(answer)
+        for label in re.split(r"\s*[,;]\s*", group)
+    }
 
 
 class QwenGenerator:
@@ -163,7 +221,7 @@ class QwenGenerator:
         if self._model is not None:
             return
         if platform.system() != "Darwin" or platform.machine() != "arm64":
-            raise RuntimeError("The midterm generator requires Apple Silicon and MLX-LM")
+            raise RuntimeError("The local generator requires Apple Silicon and MLX-LM")
         from mlx_lm import load
         path = model_snapshot(self.model_name)
         self.revision = path.name

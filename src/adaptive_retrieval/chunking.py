@@ -35,8 +35,8 @@ def chunk_document(
     document: Document,
     *,
     strategy: str = "paragraph",
-    max_words: int = 160,
-    overlap_words: int = 20,
+    max_words: int = 240,
+    overlap_words: int = 40,
 ) -> list[Chunk]:
     """Split text while keeping original character offsets and document identity.
 
@@ -82,8 +82,8 @@ def chunk_documents(
     documents: Iterable[Document],
     *,
     strategy: str = "paragraph",
-    max_words: int = 160,
-    overlap_words: int = 20,
+    max_words: int = 240,
+    overlap_words: int = 40,
 ) -> list[Chunk]:
     return [
         chunk
