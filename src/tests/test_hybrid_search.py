@@ -42,8 +42,15 @@ class HybridSearchTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             base = self.make_session(directory)
             with OptimizedSearchSession(base, "cosine") as session:
-                self.assertEqual(session.search("apple", 3), base.search("apple", 3))
-                self.assertIsNone(session.process)
+                expected = base.search("apple", 3)
+                with patch.object(base, "search", side_effect=AssertionError("slow Python search")):
+                    actual = session.search("apple", 3)
+                # Equal scores may be ordered differently; FAISS uses float32.
+                self.assertEqual(actual[0][0].document_id, expected[0][0].document_id)
+                self.assertEqual({c.id for c, _ in actual}, {c.id for c, _ in expected})
+                for (_, score), (_, reference) in zip(actual, expected):
+                    self.assertAlmostEqual(score, reference, places=5)
+                self.assertTrue(session.process.is_alive(), "cosine must use the shared FAISS worker")
 
     def test_unmatched_keywords_do_not_boost_unrelated_documents(self):
         with TemporaryDirectory() as directory:
@@ -88,8 +95,11 @@ class HybridSearchTests(unittest.TestCase):
             base = self.make_session(directory)
             for mode, cli_label, ui_label in [("hybrid", "rrf=", "RRF:"), ("cosine", "cosine=", "Similarity:")]:
                 with self.subTest(retriever=mode):
-                    with patch("runner.SearchSession", return_value=base), patch("builtins.print") as output:
+                    # Patch where the CLI looks the class up, or the real index and models load.
+                    with patch("adaptive_retrieval.rag_cli.SearchSession", return_value=base) as opened, \
+                            patch("builtins.print") as output:
                         main(["search", "banana", "--retriever", mode])
+                        opened.assert_called_once()
                         self.assertTrue(any(cli_label in str(call) for call in output.call_args_list))
                     with OptimizedSearchSession(base, mode) as session:
                         commands = iter(["banana", "/quit"])

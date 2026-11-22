@@ -88,7 +88,7 @@ class TolerantQuoteTests(unittest.TestCase):
             "Retry with exponential backoff and jitter.": "formatting",
             "The api_key header is required for every retry.": "formatting",
             "\u201cRetry with exponential backoff and jitter.\u201d": "formatting",
-            "Use an idempotency key... retry with exponential backoff": "ellipsis",
+            "...Use an idempotency key to avoid double processing...": "formatting",
         }
         for quote, kind in cases.items():
             with self.subTest(quote=quote):
@@ -99,11 +99,65 @@ class TolerantQuoteTests(unittest.TestCase):
             "Use an idempotency key to avoid triple processing.",
             "Retry with exponential backoff... use an idempotency key",
             "Use an... retry with exponential backoff",
+            "Use an idempotency key... retry with exponential backoff",
             "Retry with exponential backoff - jitter",
             "Retry with exponential backoff and jitter. Always.",
         ]:
             with self.subTest(quote=quote):
                 self.assertIsNone(quote_match(quote, LIST_CHUNK.text))
+
+    def test_cropping_or_formatting_cannot_change_the_meaning(self):
+        cases = [
+            ("5 business days for delivery", "We need 15 business days for delivery."),
+            ("5 business days for delivery", "We need 1.5 business days for delivery."),
+            ("096 bytes is the header limit", "4,096 bytes is the header limit"),
+            ("30 minutes is the typical time", "15-30 minutes is the typical time"),
+            ("30 minutes is the typical time", "15 to 30 minutes is the typical time"),
+            ("30 minutes is the typical time", "15 - 30 minutes is the typical time"),
+            ("the typical wait in minutes is 15", "the typical wait in minutes is 15 to 30"),
+            ("latency target is 15", "latency target is 150 ms"),
+            ("latency target is 15", "latency target is 15 %"),
+            ("the budget ceiling is 5", "the budget ceiling is 5 million"),
+            ("5% margin change expected", "-5% margin change expected"),
+            ("available in us-east region", "The API is unavailable in us-east region."),
+            ("available in us-east region", "The API is not available in us-east region."),
+            ("available in us-east region", "The API isn't currently available in us-east region."),
+            ("production traffic is allowed", "non-production traffic is allowed"),
+            ("The service is ... available in us-east", "The service is not currently available in us-east."),
+            ("Acme response time ... is 4 hours", "Acme response time is 9 hours. Globex is 4 hours."),
+            ("the limit is 23 requests", "the limit is 2*3 requests"),
+            ("the capacity is 102 units", "the capacity is 10" + chr(0xB2) + " units"),
+            ("set maxtokens to the limit", "set max_tokens to the limit"),
+            ("500 ms triggers a page", "Rule:" + chr(10) + "> 500 ms triggers a page"),
+            ("2000ms for 10 minutes", "P95 latency > 2000ms for 10 minutes."),
+            ("2000ms for 10 minutes", "P95 latency >2000ms for 10 minutes."),
+            ("link speed is 10 MB per second", "link speed is 10 Mb per second"),
+            ("ask us for the report", "ask US for the report"),
+            ("5) Emit detailed telemetry", "3) Emit detailed telemetry"),
+            ("045) to ensure the proxy restarts", "(p = 0.045) to ensure the proxy restarts"),
+        ]
+        for quote, source in cases:
+            with self.subTest(quote=quote, source=source):
+                self.assertIsNone(quote_match(quote, source))
+
+    def test_legitimate_crops_still_match(self):
+        for quote, source in [
+            ("eviction_rate > 0.5% for pages", "thresholds (eviction_rate > 0.5% for pages), then page"),
+            ("30 seconds is the new timeout", "It moved to 30 seconds is the new timeout"),
+            ("available in us-east region", "No downtime, available in us-east region."),
+            ("Emit detailed telemetry", "3) Emit **detailed** telemetry"),
+            ("3) Emit detailed telemetry", "3) Emit **detailed** telemetry"),
+            ("5 replicas per region", "Plan:" + chr(10) + "- 5 replicas per region"),
+            ("5 business days for delivery", "15 business days for delivery or 5 business days for delivery."),
+        ]:
+            with self.subTest(quote=quote):
+                self.assertIsNotNone(quote_match(quote, source))
+
+    def test_cropped_digit_cannot_become_a_verified_answer(self):
+        chunk = Chunk("c", "d", "We need 15 business days for delivery.", "w", None, 0, 38)
+        record = {"status": "answer", "answer": "5 business days. [S1]",
+                  "citations": [{"source": "S1", "quote": "5 business days for delivery"}]}
+        self.assertEqual(check_answer(output(record), {"S1": chunk}).reason, "quote_not_in_source")
 
     def test_grouped_markers_are_parsed_and_other_brackets_ignored(self):
         self.assertEqual(

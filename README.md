@@ -7,8 +7,8 @@ expansion only when keyword and dense search disagree on the top document, and
 Qwen generation that answers with verified quotations or refuses.
 
 See [the architecture](docs/ARCHITECTURE.md) for how the files connect and
-[the plan](docs/PLAN.md) for the remaining milestones. The verified-answer cache
-(H3) and answer-correctness scoring are not implemented yet.
+[the plan](docs/PLAN.md) for the remaining milestones. Answer-correctness scoring
+is not implemented yet.
 
 ## Setup
 
@@ -29,20 +29,30 @@ python src/runner.py chunk          # 240-word paragraph-aware chunks, 40-word o
 python src/runner.py embed
 ```
 
-`prepare-subset` decodes the 31 benchmark documents stored as escaped strings
-(literal `\n` line breaks). If your `data/processed/` predates this, re-run
+`prepare-subset` decodes 32 benchmark documents with escaped line breaks (31
+fully escaped, 1 partly). If your `data/processed/` predates this, re-run
 `prepare-subset`, `chunk` and `embed`.
 
 Models use about 3.5 GB of disk. Normal inference reads cached model files; it
 does not download or call a hosted inference API.
 
 **LameR expansion** (`--retriever adaptive` or `hybrid_lamer`) needs an expansion
-model. The default matches the midterm measurements: Llama 3.2 3B in Ollama.
+model. The standard backend, used in the midterm, is Llama 3.2 3B (Q4_K_M) in
+Ollama. No account or access token is needed: Ollama downloads the weights from
+its own registry, unlike Meta's gated Hugging Face repository. Use is governed by
+the Llama 3.2 Community License.
 
 ```bash
-ollama serve                 # in another terminal, if it is not already running
+brew install ollama          # or install the app from https://ollama.com/download
+ollama serve                 # skip if the Ollama app is already running
 ollama pull llama3.2:3b
+ollama list                  # ID must start with a80c4f17acd5
 ```
+
+Warmup refuses to run if the installed `llama3.2:3b` digest differs from the one
+pinned in `expansion.py`, because changed weights would change the results. Each
+run records the Ollama version, model digest, quantization, sampling options,
+embedding device and machine (chip and memory) in `summary.json`.
 
 Pass `--expander mlx` to reuse the local Qwen generator instead. That avoids
 Ollama but changes the expansion model, so its numbers are not comparable with
@@ -55,7 +65,7 @@ form the ablation ladder for the final report:
 
 | Mode | What it does | Hypothesis |
 | --- | --- | --- |
-| `cosine` | Dense-only exact cosine search (bare-bones baseline) | |
+| `cosine` | Dense-only exact cosine search, same FAISS worker as hybrid (baseline) | |
 | `bm25` | Keyword-only BM25S | |
 | `hybrid` (default) | RRF fusion (k = 60) of dense and BM25S, 50 candidates each | H1 |
 | `hybrid_lamer` | Hybrid with LameR expansion on every question | H2 baseline |
@@ -79,6 +89,21 @@ python src/runner.py rag-eval --retriever adaptive --split dev
 python src/runner.py rag-eval --retriever hybrid --split dev --limit 5   # smoke test
 ```
 
+**Midterm-comparable retrieval runs** use `--repeats 8`, which makes 8 passes,
+each in a seeded random question order. Quality is averaged per question across
+passes, then across questions; latency and gate rate use every request. Expansion
+is seeded and usually repeats exactly (0 of 29 expansions differed between the
+two saved runs compared), but not always, so use repeats for reported numbers.
+
+```bash
+python src/runner.py evaluate --retriever adaptive --split dev --repeats 8
+```
+
+The midterm's retrieval latencies came from an Apple M4 Max (64 GB); compare
+latency only between runs on the same machine. The midterm also used 120-word
+chunks; this repository now uses 240 words on a cleaned corpus, so its quality
+numbers are close to, not identical with, the midterm table.
+
 Both commands default to the **dev** split. Tune on `dev`/`val`; run `test` only
 once per frozen configuration. Each run writes `per_question.jsonl` and
 `summary.json` under `results/<kind>_<retriever>_<split>_<timestamp>/`, including
@@ -91,6 +116,46 @@ reached the prompt and whether answers cite it. Records keep `gold_answer` and
 `answer_facts` with `answer_correct: null`, so correctness and citation
 entailment can be scored later without regenerating. Gold answers never enter
 the index or the prompt.
+
+## Verified-answer cache (H3)
+
+The cache stores answers that passed the citation checker, never refusals, and
+reuses one only for the same question:
+
+1. **Frozen experiment:** documents and embeddings must not change while a cache
+   is in use. If the corpus, index, embedding, generator, prompt or checker
+   changes, startup throws out the whole cache (renamed to `*.stale-<id>`) and
+   rebuilds it. Use a separate `--cache` file for each index you compare.
+   Retriever, top-k, prompt budget and expander only separate entries: arms can
+   share a file without sharing answers or discarding each other.
+2. **Shortlist:** question cosine similarity of at least 0.80.
+3. **Key-term veto:** numbers, `snake_case` identifiers and regions match exactly.
+4. **Sources assertion:** cited chunks and quotes are intact.
+5. **Judge:** the most similar remaining entry goes to an LLM that sees only the
+   two questions. Only an exact `YES` is a hit; NO, other text, errors and
+   timeouts run the full pipeline.
+
+```bash
+python src/runner.py rag --retriever adaptive --cache data/processed/answer_cache.jsonl
+python src/runner.py cache-eval --retriever adaptive      # compares both judges
+```
+
+`--cache-judge` selects `qwen` (default, the loaded MLX generator) or `llama`
+(Ollama). `--cache-threshold` changes the shortlist threshold. The cache is off
+unless `--cache` is passed.
+
+**Experimental.** Matching worked on the development variants, but a match does
+not make the stored answer correct: 3 of 14 hits repeated a wrong answer
+(correctness labeled by Claude; no human has verified it). The
+experiment warms the cache with generated seed answers; a company deploying this
+would build its own from valid generated answers. There is no access-control key,
+so do not share one between users who may see different documents. See the [results](docs/ARCHITECTURE.md#second-experiment-same-question-judge).
+
+`cache-eval` reads the completed
+`data/cache_seeds/cache_seed_questions_loaders_complete.txt`, warms an empty
+cache with the seeds, then judges each paraphrase and near-miss without
+generating. It reports both judges, runs with checks switched off, controls and
+a descriptive threshold sweep under `results/cache_eval_<retriever>_<timestamp>/`.
 
 ## Ask questions
 
@@ -117,13 +182,15 @@ budget are omitted whole.
 1. The generator sees the question and retrieved passages, and is instructed to
    answer only when they contain the required facts. It may return
    `insufficient_evidence`.
-2. Code checks JSON structure, completion and source IDs. Every quote must come
-   from the source it cites. Matching ignores formatting the model may drop:
-   whitespace, case, list bullets, Markdown emphasis/backticks, typographic
-   quotes and dashes, and line breaks stored as a literal `\n`. A quote may
-   join fragments with `...` if each fragment has at least 12 characters and
-   they appear in order. Changed, added or reordered words never match. Each
-   citation records `quote_match` (`exact`, `formatting` or `ellipsis`).
+2. Code checks JSON structure, completion and source IDs. Each quote must be one
+   contiguous span of whole tokens in the source it cites. It may differ only in
+   whitespace, list/heading/block-quote markers, paired `*emphasis*`, backticks,
+   typographic quotes and dashes, edge punctuation or ellipses, and the first
+   capital. It may not cut a word or number, splice fragments with `...`, or crop
+   off a negation in the three preceding words, a comparator, or half of a number
+   range. Each citation records `quote_match` (`exact` or `formatting`).
+   A verbatim quote can still mislead out of context (for example a dropped
+   "only for admins" after it).
 3. Inline markers (`[S1]`, `[S1][S2]` or `[S1, S2]`) must name only sources
    with a verified quote, and at least one marker is required.
 4. Missing, malformed or invalid citations cause a refusal with an explicit reason.

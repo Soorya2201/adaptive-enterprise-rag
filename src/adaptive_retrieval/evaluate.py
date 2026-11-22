@@ -2,6 +2,8 @@
 
 import json
 import math
+import platform
+import random
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -118,15 +120,23 @@ def percentile(values: list[float], fraction: float) -> float | None:
 
 
 def summarize_records(records: list[dict]) -> dict:
-    scored = [record for record in records if record["answerable"]]
+    """Quality: mean over questions of each question's mean across repeats.
+
+    Latency and gate rate use every request, as in the midterm protocol.
+    """
+    by_question: dict[str, list[dict]] = {}
+    for record in records:
+        by_question.setdefault(record["question_id"], []).append(record)
+    scored = [rows for rows in by_question.values() if rows[0]["answerable"]]
     latencies = [record["retrieval_ms"] for record in records]
     metrics = {}
     for name in ("hit@1", f"hit@{TOP_K}", f"recall@{TOP_K}", f"ndcg@{TOP_K}", "reciprocal_rank"):
         key = "mrr" if name == "reciprocal_rank" else name
-        metrics[key] = mean(record[name] for record in scored) if scored else None
+        metrics[key] = mean(mean(row[name] for row in rows) for rows in scored) if scored else None
     return {
-        "questions": len(records),
+        "questions": len(by_question),
         "scored": len(scored),
+        "requests": len(records),
         **metrics,
         "mean_ms": mean(latencies) if latencies else None,
         "p95_ms": percentile(latencies, 0.95),
@@ -147,23 +157,51 @@ def git_state() -> dict:
     return {"git_commit": run("rev-parse", "HEAD"), "working_tree_dirty": bool(status) if status is not None else None}
 
 
+def hardware() -> dict:
+    """Machine description; latency is only comparable on matching hardware."""
+    info = {"platform": platform.platform(), "machine": platform.machine(),
+            "python": platform.python_version()}
+    if platform.system() == "Darwin":
+        def sysctl(name):
+            try:
+                return subprocess.run(["sysctl", "-n", name], capture_output=True, text=True,
+                                      check=True).stdout.strip()
+            except (OSError, subprocess.CalledProcessError):
+                return None
+        memory = sysctl("hw.memsize")
+        info.update({"chip": sysctl("machdep.cpu.brand_string"),
+                     "memory_gb": round(int(memory) / 2**30) if memory else None})
+    return info
+
+
 def run_settings(session) -> dict:
     retriever = getattr(session, "retriever", "cosine")
     expander = getattr(session, "expander", None)
+    expanding = retriever in {"hybrid_lamer", "adaptive"}
     return {
         "retriever": retriever,
         "score_type": getattr(session, "score_type", "cosine"),
-        "candidate_depth": getattr(session, "candidate_depth", None) if retriever != "cosine" else None,
-        "expander": getattr(expander, "model_name", None) if retriever in {"hybrid_lamer", "adaptive"} else None,
+        "candidate_depth": getattr(session, "candidate_depth", None),
+        "expander": getattr(expander, "model_name", None) if expanding else None,
+        "expander_backend": getattr(expander, "backend_info", None) if expanding else None,
         "expansion_candidates": getattr(session, "expansion_candidates", None) if expander else None,
+        "embedding_device": getattr(getattr(session, "embedder", None), "device", None),
+        "hardware": hardware(),
     }
 
 
 def run_evaluation(
     session, questions_path: Path, out_dir: Path, *, split: str | None = None,
-    limit: int | None = None,
+    limit: int | None = None, repeats: int = 1, seed: int = 42,
 ) -> tuple[Path, dict]:
-    """Evaluate the selected questions and save per-question records plus a summary."""
+    """Evaluate the selected questions and save per-question records plus a summary.
+
+    Each repeat visits the questions in a seeded random order, like the midterm's
+    optimization runs (8 passes). Expansion sampling is not bit-reproducible on
+    GPU, so repeats average out run-to-run variation.
+    """
+    if repeats < 1:
+        raise ValueError("repeats must be positive")
     questions = load_questions(questions_path, split, limit)
     # Load models before timing so the first question does not include startup.
     if hasattr(session.embedder, "warmup"):
@@ -171,7 +209,13 @@ def run_evaluation(
     expander = getattr(session, "expander", None)
     if expander is not None and getattr(session, "retriever", "") in {"hybrid_lamer", "adaptive"}:
         expander.warmup()
-    records = [evaluate_question(session, question) for question in questions]
+    rng = random.Random(seed)
+    records = []
+    for repeat in range(repeats):
+        order = questions.copy()
+        rng.shuffle(order)
+        for question in order:
+            records.append({**evaluate_question(session, question), "repeat": repeat})
     timestamp = datetime.now(timezone.utc)
     by_type: dict[str, list[dict]] = {}
     for record in records:
@@ -184,6 +228,8 @@ def run_evaluation(
             "questions_sha256": file_sha256(questions_path),
             "split": split or "all",
             "limit": limit,
+            "repeats": repeats,
+            "seed": seed,
             "index": session.metadata,
             **run_settings(session),
         },
@@ -210,9 +256,11 @@ def format_summary(summary: dict) -> str:
     if not summary["scored"]:
         lines.append(f"No questions have a correct document; nothing to score ({unscored} questions)")
         return "\n".join(lines)
+    repeats = run.get("repeats", 1)
     lines += [
         f"Scored {summary['scored']} of {summary['questions']} questions "
-        f"({unscored} have no correct document)",
+        f"({unscored} have no correct document)"
+        + (f"; {repeats} passes, {summary['requests']} requests" if repeats > 1 else ""),
         f"nDCG@{TOP_K}: {summary[f'ndcg@{TOP_K}']:.3f} | Recall@{TOP_K}: {summary[f'recall@{TOP_K}']:.3f} | "
         f"Hit@1: {summary['hit@1']:.3f} | Hit@{TOP_K}: {summary[f'hit@{TOP_K}']:.3f} | MRR: {summary['mrr']:.3f}",
         f"Latency: mean {summary['mean_ms']:.1f} ms | p95 {summary['p95_ms']:.1f} ms | "

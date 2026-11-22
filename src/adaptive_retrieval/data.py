@@ -17,14 +17,22 @@ _ESCAPE = re.compile(r'''\\([\\nrt"'])''')
 _UNESCAPED = {"n": "\n", "r": "\r", "t": "\t", '"': '"', "'": "'", "\\": "\\"}
 
 
+# A partly escaped body: a break after sentence punctuation that starts a new prose
+# line or "- " item. Code and protocol examples do not have this shape.
+_PROSE_BREAK = re.compile(r"(?<=[a-z0-9)][.:;!?])\\n(?=(?:- )?[A-Z])")
+
+
 def clean_document_text(text: str) -> str:
-    """Decode documents whose body is escaped; leave all other text unchanged.
+    """Decode escaped document bodies and escaped prose line breaks.
 
     A document counts as escaped when it has more literal backslash-n sequences
     than real line breaks. Documents that merely mention escapes (HTTP or SSE
     examples such as a literal backslash-n) keep them.
     """
     if text.count("\\n") <= text.count("\n"):
+        # Several such breaks mean escaped prose; a single one may be a mention.
+        if len(_PROSE_BREAK.findall(text)) >= 3:
+            return _PROSE_BREAK.sub("\n", text)
         return text
     return _ESCAPE.sub(lambda match: _UNESCAPED[match.group(1)], text)
 

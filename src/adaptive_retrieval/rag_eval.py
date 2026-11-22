@@ -94,7 +94,9 @@ def summarize(records: list[dict]) -> dict:
         "mean_llm_tokens": _rate(metric("total_llm_tokens")),
         "gate_rate": _rate(r["retrieval"].get("gate_fired", False) for r in records),
         "routes": dict(Counter(r["route"] for r in records)),
-        "refusal_reasons": dict(Counter(r["reason"] for r in records if r["status"] != "answer")),
+        # Kept apart: refusing an unanswerable question is correct, not a failure.
+        "false_refusal_reasons": dict(Counter(r["reason"] for r in answerable if r["status"] != "answer")),
+        "correct_refusal_reasons": dict(Counter(r["reason"] for r in unanswerable if r["status"] != "answer")),
     }
 
 
@@ -150,8 +152,9 @@ def format_rag_summary(summary: dict) -> str:
         + (f" | expander: {run['expander']}" if run.get("expander") else ""),
         f"Questions: {summary['questions']} ({summary['answerable']} answerable, "
         f"{summary['unanswerable']} unanswerable)",
-        f"Answer rate: {fmt(summary['answer_rate'])} | false refusals: {fmt(summary['false_refusal_rate'])} | "
+        f"Answer rate (all questions): {fmt(summary['answer_rate'])} | false refusals: {fmt(summary['false_refusal_rate'])} | "
         f"correct refusals on unanswerable: {fmt(summary['refusal_accuracy_unanswerable'])}",
+        f"False refusal reasons (answerable only): {summary['false_refusal_reasons']}",
         f"Gold doc in context: {fmt(summary['context_gold_recall'])} | answers citing gold doc: "
         f"{fmt(summary['cites_gold_rate'])}",
         f"Latency: mean {fmt(summary['mean_total_ms'], '.0f')} ms | p95 {fmt(summary['p95_total_ms'], '.0f')} ms | "

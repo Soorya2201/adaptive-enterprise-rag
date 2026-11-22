@@ -52,6 +52,15 @@ class DataPipelineTests(unittest.TestCase):
         text = "Heartbeat fix\nSend " + '":' + slash + "n" + slash + 'n"' + " every 15s.\nDone."
         self.assertEqual(clean_document_text(text), text)
 
+    def test_partly_escaped_prose_is_decoded_but_code_is_not(self):
+        slash = chr(92) + "n"
+        code = "printf 'GET / HTTP/1.1" + slash + "Host: x'"
+        head = "\n".join(["Title", "", "Owner: A", "", "Status: open", code, ""])
+        body = "Approach:" + slash + "- First step." + slash + "- Second step." + slash + "Rollback: flag."
+        cleaned = clean_document_text(head + body)
+        self.assertEqual(cleaned, head + "Approach:\n- First step.\n- Second step.\nRollback: flag.")
+        self.assertEqual(clean_document_text(cleaned), cleaned)
+
     def test_prepare_and_check_subset_decode_escaped_documents(self):
         slash = chr(92)
         with TemporaryDirectory() as directory:

@@ -76,9 +76,12 @@ def _search_worker(connection, texts, vectors, threads):
                     ranking = keyword(text, depth)
                     connection.send((True, (ranking, (perf_counter() - started) * 1000)))
                     continue
-                if kind != "search":
+                if kind == "search":
+                    _, question, vector, depth = request
+                elif kind == "dense":
+                    _, vector, depth = request
+                else:
                     raise ValueError(f"Unknown worker request {kind!r}")
-                _, question, vector, depth = request
                 started = perf_counter()
                 query = np.asarray(vector, dtype="float32").reshape(1, -1)
                 if query.shape[1] != dense.d or not np.isfinite(query).all() or not np.linalg.norm(query):
@@ -87,6 +90,9 @@ def _search_worker(connection, texts, vectors, threads):
                 scores, ids = dense.search(query, min(depth, dense.ntotal))
                 dense_ranking = [(int(i), float(s)) for i, s in zip(ids[0], scores[0]) if i >= 0]
                 searched = perf_counter()
+                if kind == "dense":
+                    connection.send((True, (dense_ranking, (searched - started) * 1000)))
+                    continue
                 lexical_ranking = keyword(question, depth)
                 timings = {
                     "vector_search_ms": (searched - started) * 1000,
@@ -132,23 +138,23 @@ class OptimizedSearchSession:
         self.connection = None
         self.closed = False
         self.chunks = [chunk for chunk, vector in session.rows]
-        if retriever != "cosine":
-            context = mp.get_context("spawn")
-            self.connection, child = context.Pipe()
-            self.process = context.Process(
-                target=_search_worker,
-                args=(child, [chunk.text for chunk in self.chunks],
-                      [vector for chunk, vector in session.rows], faiss_threads),
-                daemon=True,
-            )
-            try:
-                self.process.start()
-                child.close()
-                self._receive()
-            except BaseException:
-                child.close()
-                self.close()
-                raise
+        # Every mode uses the same worker and backend, so latencies are comparable.
+        context = mp.get_context("spawn")
+        self.connection, child = context.Pipe()
+        self.process = context.Process(
+            target=_search_worker,
+            args=(child, [chunk.text for chunk in self.chunks],
+                  [vector for chunk, vector in session.rows], faiss_threads),
+            daemon=True,
+        )
+        try:
+            self.process.start()
+            child.close()
+            self._receive()
+        except BaseException:
+            child.close()
+            self.close()
+            raise
 
     def _receive(self):
         if not self.connection.poll(240):
@@ -168,7 +174,10 @@ class OptimizedSearchSession:
     def _top_document(self, ranking):
         return self.chunks[ranking[0][0]].document_id if ranking else None
 
-    def search(self, question, top_k=3):
+    def embed_question(self, question):
+        return self.session.embed_question(question)
+
+    def _check(self, question, top_k):
         if self.closed:
             raise RuntimeError("Search session is closed")
         question = question.strip()
@@ -176,11 +185,24 @@ class OptimizedSearchSession:
             raise ValueError("Enter a question to search")
         if top_k < 1:
             raise ValueError("top_k must be positive")
+        return question
+
+    def search(self, question, top_k=3, *, vector=None):
+        """Rank chunks; pass ``vector`` to reuse a question embedding computed earlier."""
+        question = self._check(question, top_k)
         if self.retriever == "cosine":
-            results = self.session.search(question, top_k)
-            self.last_timings = dict(getattr(self.session, "last_timings", {}))
+            started = perf_counter()
+            if vector is None:
+                vector = self.embed_question(question)
+            encoded = perf_counter()
+            ranking, dense_ms = self._request("dense", vector, self.candidate_depth)
+            self.last_timings = {
+                "embedding_ms": (encoded - started) * 1000,
+                "vector_search_ms": dense_ms,
+                "hybrid_search_ms": (perf_counter() - encoded) * 1000,
+            }
             self.last_trace = {"retriever": "cosine", "gate_fired": False, "retrieval_rounds": 1}
-            return results
+            return [(self.chunks[index], score) for index, score in ranking[:top_k]]
         started = perf_counter()
         if self.retriever == "bm25":
             # Keyword-only search never needs the query embedding.
@@ -191,10 +213,8 @@ class OptimizedSearchSession:
             }
             self.last_trace = {"retriever": "bm25", "gate_fired": False, "retrieval_rounds": 1}
             return [(self.chunks[index], score) for index, score in ranking[:top_k]]
-        if hasattr(self.embedder, "embed_query"):
-            vector = self.embedder.embed_query(question)
-        else:
-            vector = self.embedder.embed_texts([question])[0]
+        if vector is None:
+            vector = self.embed_question(question)
         encoded = perf_counter()
         dense, lexical, timings = self._request("search", question, vector, self.candidate_depth)
         searched = perf_counter()

@@ -8,9 +8,11 @@ import subprocess
 import sys
 from time import perf_counter
 
+from .cache import VerifiedCache
 from .expansion import MlxExpander, OllamaExpander
 from .generation import QwenGenerator
 from .interactive import SearchSession
+from .judge import make_judge
 from .hybrid_search import EXPANDING_RETRIEVERS, OptimizedSearchSession
 from .paths import DATA_DIR, PROJECT_ROOT
 from .pipeline import RagPipeline
@@ -35,7 +37,9 @@ def format_result(result: dict, *, show_sources: bool = False) -> str:
     lines = [
         f"\n{'ANSWER' if result['status'] == 'answer' else 'REFUSAL'}",
         result["answer"],
-        f"\nEvidence check: {result['reason']}",
+        f"\nEvidence check: {result['reason']}"
+        + (f" (cache hit, similarity {result['cache']['matched_similarity']:.3f}, "
+           f"from: {result['cache']['matched_question']})" if result.get("route") == "cache_hit" else ""),
     ]
     for citation in result["citations"]:
         lines.extend([
@@ -73,6 +77,12 @@ def format_result(result: dict, *, show_sources: bool = False) -> str:
             )
         else:
             lines.append("Gate: dense and keyword search agree on the top document; no expansion")
+    if m.get("judge_calls"):
+        verdict = result.get("cache", {}).get("judgment") or {}
+        lines.append(
+            f"Cache judge: {verdict.get('verdict')} | {m['judge_ms']:.0f} ms, "
+            f"{m['judge_input_tokens']}/{m['judge_output_tokens']} tokens in/out"
+        )
     lines.extend([
         "Tokens include instructions, JSON, citations, and stop tokens.",
         "Local compute profile; dollar cost and energy are not measured.",
@@ -102,8 +112,16 @@ def run_rag(args) -> None:
     print("Loading index and warming local models...", file=sys.stderr, flush=True)
     generator = QwenGenerator(max_new_tokens=args.max_new_tokens, max_prompt_tokens=args.max_prompt_tokens)
     session = open_search_session(args, generator)
+    cache = None
+    if getattr(args, "cache", None):
+        cache = VerifiedCache(
+            args.cache, threshold=args.cache_threshold,
+            judge=make_judge(args.cache_judge, generator, args.expansion_model),
+        )
+        print(f"Answer cache: {args.cache} ({len(cache)} entries, threshold {args.cache_threshold})",
+              file=sys.stderr, flush=True)
     try:
-        _run_rag_session(args, RagPipeline(session, generator), started)
+        _run_rag_session(args, RagPipeline(session, generator, cache), started)
     finally:
         session.close()
 
@@ -128,8 +146,36 @@ def run_rag_eval(args) -> None:
     print(f"\nSaved per-question results and summary: {run_dir}")
 
 
+def run_cache_eval(args) -> None:
+    from .cache_eval import format_cache_summary, print_progress, run_cache_evaluation
+
+    if not args.corpus.is_file():
+        raise FileNotFoundError("Cache evaluation requires the source corpus; run 'prepare-subset'")
+    print("Loading index and warming local models...", file=sys.stderr, flush=True)
+    generator = QwenGenerator(max_new_tokens=args.max_new_tokens, max_prompt_tokens=args.max_prompt_tokens)
+    session = open_search_session(args, generator)
+    cache = VerifiedCache(threshold=args.cache_threshold, require_exact_quotes=args.require_exact_quotes)
+    judges = {name: make_judge(name, generator, args.expansion_model) for name in args.judges}
+    try:
+        run_dir, summary = run_cache_evaluation(
+            RagPipeline(session, generator, cache), judges, args.seeds, args.questions, args.out_dir,
+            top_k=args.top_k, progress=print_progress,
+        )
+    finally:
+        session.close()
+    print(format_cache_summary(summary))
+    print(f"\nSaved warm-up, variant lookups and summary: {run_dir}")
+
+
 def _run_rag_session(args, pipeline: RagPipeline, started: float) -> None:
     pipeline.warmup()
+    if pipeline.cache_discard:
+        discard = pipeline.cache_discard
+        print(
+            f"Cache thrown out ({', '.join(discard['changed'])} changed): {discard['entries']} entries "
+            f"moved to {discard['moved_to']}. It will rebuild as questions are answered.",
+            file=sys.stderr, flush=True,
+        )
     pipeline.startup["total_startup_ms"] = (perf_counter() - started) * 1000
     print(
         f"Ready in {pipeline.startup['total_startup_ms'] / 1000:.2f}s. "

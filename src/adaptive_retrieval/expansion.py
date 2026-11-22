@@ -34,6 +34,10 @@ TEMPERATURE = 0.3
 SEED = 42
 DEFAULT_OLLAMA_MODEL = "llama3.2:3b"
 OLLAMA_URL = "http://127.0.0.1:11434"
+# Ollama tags can be re-pointed upstream; pin the exact weights (Q4_K_M GGUF).
+PINNED_OLLAMA_DIGESTS = {
+    "llama3.2:3b": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+}
 
 
 @dataclass(frozen=True)
@@ -78,6 +82,7 @@ class OllamaExpander:
         self.model_name = model
         self.url = url.rstrip("/")
         self.timeout = timeout
+        self.backend_info: dict = {"backend": "ollama", "model": model}
 
     def _post(self, endpoint: str, payload: dict | None = None) -> dict:
         request = Request(
@@ -95,12 +100,38 @@ class OllamaExpander:
             ) from exc
 
     def warmup(self) -> None:
-        names = {model.get("name") for model in self._post("/api/tags").get("models", [])}
-        if self.model_name not in names and f"{self.model_name}:latest" not in names:
+        """Check the installed weights match the pinned digest, then load them."""
+        self.check_model()
+        self.expand("warm up", [])
+
+    def check_model(self) -> None:
+        """Refuse unpinned weights and record which backend is in use."""
+        models = {model.get("name"): model for model in self._post("/api/tags").get("models", [])}
+        installed = models.get(self.model_name) or models.get(f"{self.model_name}:latest")
+        if installed is None:
             raise RuntimeError(
                 f"Ollama model {self.model_name} is not installed; run 'ollama pull {self.model_name}'."
             )
-        self.expand("warm up", [])
+        pinned = PINNED_OLLAMA_DIGESTS.get(self.model_name)
+        if pinned and installed.get("digest") != pinned:
+            raise RuntimeError(
+                f"Ollama model {self.model_name} has digest {installed.get('digest', '?')[:12]}, "
+                f"not the pinned {pinned[:12]}; results would not be comparable. "
+                f"Re-pull it or update PINNED_OLLAMA_DIGESTS in expansion.py."
+            )
+        details = installed.get("details", {})
+        self.backend_info = {
+            "backend": "ollama",
+            "model": self.model_name,
+            "digest": installed.get("digest"),
+            "quantization": details.get("quantization_level"),
+            "parameter_size": details.get("parameter_size"),
+            "ollama_version": self._post("/api/version").get("version"),
+            "options": {
+                "temperature": TEMPERATURE, "seeds": [SEED + i for i in range(EXPANSION_COUNT)],
+                "num_ctx": 4096, "num_predict": MAX_EXPANSION_TOKENS,
+            },
+        }
 
     def expand(self, question: str, candidates: Sequence[Chunk]) -> Expansion:
         prompt = build_prompt(question, candidates)
@@ -134,6 +165,11 @@ class MlxExpander:
     def __init__(self, generator) -> None:
         self.generator = generator
         self.model_name = generator.model_name
+        self.backend_info = {
+            "backend": "mlx", "model": generator.model_name,
+            "options": {"temperature": TEMPERATURE, "seeds": [SEED + i for i in range(EXPANSION_COUNT)],
+                        "max_tokens": MAX_EXPANSION_TOKENS},
+        }
 
     def warmup(self) -> None:
         self.generator.warmup()

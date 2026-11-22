@@ -8,13 +8,15 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from adaptive_retrieval.evaluate import load_questions, ranking_metrics, run_evaluation
-from adaptive_retrieval.expansion import Expansion, build_prompt, expanded_query
+from adaptive_retrieval.evaluate import load_questions, ranking_metrics, run_evaluation, summarize_records
+from adaptive_retrieval.expansion import (
+    PINNED_OLLAMA_DIGESTS, Expansion, OllamaExpander, build_prompt, expanded_query,
+)
 from adaptive_retrieval.hybrid_search import OptimizedSearchSession, fuse
 from adaptive_retrieval.interactive import SearchSession
 from adaptive_retrieval.models import Chunk
 from adaptive_retrieval.pipeline import RagPipeline
-from adaptive_retrieval.rag_eval import outcome, run_rag_evaluation
+from adaptive_retrieval.rag_eval import outcome, run_rag_evaluation, summarize
 from adaptive_retrieval.vector_index import write_index
 from runner import create_parser
 from test_rag import CHUNK, FakeGenerator
@@ -171,7 +173,78 @@ class MetricTests(unittest.TestCase):
             self.assertTrue(run.name.startswith("retrieval_eval_adaptive_dev_"))
 
 
+class MidtermProtocolTests(unittest.TestCase):
+    def test_repeats_average_quality_per_question_before_across_questions(self):
+        rows = [
+            {"question_id": "q1", "answerable": True, "ndcg@5": 1.0, "retrieval_ms": 10.0, "gate_fired": True},
+            {"question_id": "q1", "answerable": True, "ndcg@5": 0.0, "retrieval_ms": 30.0, "gate_fired": False},
+            {"question_id": "q2", "answerable": True, "ndcg@5": 1.0, "retrieval_ms": 20.0, "gate_fired": False},
+        ]
+        for row in rows:
+            row.update({"hit@1": row["ndcg@5"], "hit@5": row["ndcg@5"], "recall@5": row["ndcg@5"],
+                        "reciprocal_rank": row["ndcg@5"], "expansion_tokens": 0})
+        summary = summarize_records(rows)
+        self.assertEqual((summary["questions"], summary["requests"]), (2, 3))
+        self.assertEqual(summary["ndcg@5"], 0.75)
+        self.assertEqual(summary["mean_ms"], 20.0)
+        self.assertAlmostEqual(summary["gate_rate"], 1 / 3)
+
+    def test_evaluation_runs_seeded_shuffled_passes_and_records_hardware(self):
+        with TemporaryDirectory() as directory:
+            questions = Path(directory) / "q.jsonl"
+            questions.write_text("".join(json.dumps({
+                "question_id": f"q{i}", "question": "apple", "expected_doc_ids": ["apple-doc"],
+                "split": "dev", "question_type": "basic",
+            }) + "\n" for i in range(4)))
+            orders = []
+            for _ in range(2):
+                with OptimizedSearchSession(make_base(directory), "hybrid") as session:
+                    run, summary = run_evaluation(
+                        session, questions, Path(directory) / f"out{len(orders)}", split="dev", repeats=3,
+                    )
+                records = [json.loads(line) for line in (run / "per_question.jsonl").read_text().splitlines()]
+                orders.append([(r["repeat"], r["question_id"]) for r in records])
+            self.assertEqual(orders[0], orders[1])
+            self.assertEqual(len(orders[0]), 12)
+            self.assertEqual(summary["questions"], 4)
+            self.assertEqual(summary["run"]["repeats"], 3)
+            self.assertIn("platform", summary["run"]["hardware"])
+
+    def test_ollama_expander_refuses_unpinned_weights_and_records_backend(self):
+        pinned = PINNED_OLLAMA_DIGESTS["llama3.2:3b"]
+
+        def fake_post(digest):
+            def post(endpoint, payload=None):
+                if endpoint == "/api/tags":
+                    return {"models": [{"name": "llama3.2:3b", "digest": digest,
+                                        "details": {"quantization_level": "Q4_K_M"}}]}
+                return {"version": "9.9.9"}
+            return post
+
+        expander = OllamaExpander()
+        expander.expand = lambda question, candidates: None
+        expander._post = fake_post("0" * 64)
+        with self.assertRaisesRegex(RuntimeError, "not the pinned"):
+            expander.warmup()
+        expander._post = fake_post(pinned)
+        expander.warmup()
+        self.assertEqual(expander.backend_info["digest"], pinned)
+        self.assertEqual(expander.backend_info["ollama_version"], "9.9.9")
+        self.assertEqual(expander.backend_info["options"]["seeds"], [42, 43])
+
+
 class RagEvaluationTests(unittest.TestCase):
+    def test_correct_refusals_are_not_counted_as_false_refusal_reasons(self):
+        row = lambda answerable, reason: {
+            "answerable": answerable, "status": "refusal", "reason": reason, "route": "refusal",
+            "outcome": "false_refusal" if answerable else "correct_refusal", "answer_correct": None,
+            "context_has_gold": None, "cites_gold": None, "passages_ndcg@5": None,
+            "metrics": {}, "retrieval": {},
+        }
+        summary = summarize([row(True, "quote_not_in_source"), row(False, "insufficient"), row(False, "insufficient")])
+        self.assertEqual(summary["false_refusal_reasons"], {"quote_not_in_source": 1})
+        self.assertEqual(summary["correct_refusal_reasons"], {"insufficient": 2})
+
     def test_outcomes(self):
         self.assertEqual(outcome(True, True), "answered")
         self.assertEqual(outcome(True, False), "false_refusal")

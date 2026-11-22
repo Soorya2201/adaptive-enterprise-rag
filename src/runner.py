@@ -16,16 +16,18 @@ from adaptive_retrieval.expansion import DEFAULT_OLLAMA_MODEL
 from adaptive_retrieval.interactive import SearchSession, run_interactive
 from adaptive_retrieval.hybrid_search import RETRIEVERS
 from adaptive_retrieval.paths import (
-    FULL_DOCUMENTS_DIR, PROCESSED_DIR, RESULTS_DIR, SUBSET_DOCUMENTS_DIR,
+    DATA_DIR, FULL_DOCUMENTS_DIR, PROCESSED_DIR, RESULTS_DIR, SUBSET_DOCUMENTS_DIR,
 )
 from adaptive_retrieval.vector_index import file_sha256, write_index
 from adaptive_retrieval.model_store import download_models
-from adaptive_retrieval.rag_cli import open_search_session, run_rag, run_rag_eval
+from adaptive_retrieval.cache import DEFAULT_THRESHOLD
+from adaptive_retrieval.rag_cli import open_search_session, run_cache_eval, run_rag, run_rag_eval
 
 
 DEFAULT_CHUNKS = PROCESSED_DIR / "chunks.jsonl"
 DEFAULT_INDEX = PROCESSED_DIR / "qwen_index.jsonl"
 DEFAULT_QUESTIONS = PROCESSED_DIR / "subset_questions.jsonl"
+DEFAULT_CACHE_SEEDS = DATA_DIR / "cache_seeds" / "cache_seed_questions_loaders_complete.txt"
 # Chosen for all remaining experiments; see docs/ARCHITECTURE.md for the comparison.
 DEFAULT_MAX_WORDS = 240
 DEFAULT_OVERLAP_WORDS = 40
@@ -81,6 +83,10 @@ def create_parser() -> argparse.ArgumentParser:
         command.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
         command.add_argument("--split", choices=(*SPLITS, "all"), default="dev")
         command.add_argument("--limit", type=int, help="Evaluate only the first N questions")
+    evaluate.add_argument(
+        "--repeats", type=int, default=1,
+        help="Passes over the questions in seeded random order; the midterm used 8",
+    )
     rag_eval.add_argument("--top-k", type=int, choices=range(1, 21), default=5)
     rag_eval.add_argument("--max-new-tokens", type=int, default=512)
     rag_eval.add_argument("--max-prompt-tokens", type=int, default=4096)
@@ -106,6 +112,29 @@ def create_parser() -> argparse.ArgumentParser:
         rag.add_argument("--max-prompt-tokens", type=int, default=4096)
         rag.add_argument("--show-sources", action="store_true")
         rag.add_argument("--trace", type=Path, help="Append results to this JSONL path")
+        rag.add_argument(
+            "--cache", type=Path,
+            help="Verified-answer cache file (JSONL); reuse and store checked answers",
+        )
+        rag.add_argument("--cache-threshold", type=float, default=DEFAULT_THRESHOLD)
+        rag.add_argument("--cache-judge", choices=("qwen", "llama"), default="qwen")
+    cache_eval = commands.add_parser(
+        "cache-eval", help="Warm the answer cache with seed questions, then test paraphrases and near-misses",
+    )
+    cache_eval.add_argument("--seeds", type=Path, default=DEFAULT_CACHE_SEEDS)
+    cache_eval.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS)
+    cache_eval.add_argument("--index", type=Path, default=DEFAULT_INDEX)
+    cache_eval.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
+    cache_eval.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
+    cache_eval.add_argument("--top-k", type=int, choices=range(1, 21), default=5)
+    cache_eval.add_argument("--max-new-tokens", type=int, default=512)
+    cache_eval.add_argument("--max-prompt-tokens", type=int, default=4096)
+    cache_eval.add_argument("--cache-threshold", type=float, default=DEFAULT_THRESHOLD)
+    cache_eval.add_argument("--judges", nargs="+", choices=("qwen", "llama"), default=["qwen", "llama"])
+    cache_eval.add_argument(
+        "--require-exact-quotes", action="store_true",
+        help="Store only answers whose quotes all matched exactly",
+    )
     ablate = commands.add_parser("ablate", help="Copy a corpus/index pair with one document removed")
     ablate.add_argument("document_id")
     ablate.add_argument("--index", type=Path, default=DEFAULT_INDEX)
@@ -113,6 +142,7 @@ def create_parser() -> argparse.ArgumentParser:
     ablate.add_argument("--out-dir", type=Path, default=PROCESSED_DIR / "ablation")
     for command in (
         search, evaluate, rag_eval, interactive, commands.choices["ask"], commands.choices["rag"],
+        cache_eval,
     ):
         command.add_argument("--retriever", choices=RETRIEVERS, default="hybrid")
         command.add_argument(
@@ -195,6 +225,7 @@ def main(argv: list[str] | None = None) -> None:
                     run_dir, summary = run_evaluation(
                         session, args.questions, args.out_dir,
                         split=None if args.split == "all" else args.split, limit=args.limit,
+                        repeats=args.repeats,
                     )
                     print(format_summary(summary))
                     print(f"\nSaved per-question results and summary: {run_dir}")
@@ -204,6 +235,8 @@ def main(argv: list[str] | None = None) -> None:
             run_rag(args)
         elif args.command == "rag-eval":
             run_rag_eval(args)
+        elif args.command == "cache-eval":
+            run_cache_eval(args)
         elif args.command == "ablate":
             corpus, index = remove_document(args.corpus, args.index, args.document_id, args.out_dir)
             print(f"Removed {args.document_id}; corpus: {corpus}; index: {index}")
