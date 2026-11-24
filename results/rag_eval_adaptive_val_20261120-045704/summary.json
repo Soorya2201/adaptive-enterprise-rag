@@ -1,0 +1,211 @@
+{
+  "run": {
+    "timestamp_utc": "2026-11-20T04:57:04+00:00",
+    "git_commit": "46fb5e837bee29dec2311a320e837fce79023c46",
+    "working_tree_dirty": true,
+    "questions_path": "/Users/johntsoi/USC/Fall 2026/CS 544/adaptive-enterprise-retrieval/data/processed/subset_questions.jsonl",
+    "questions_sha256": "7d947e61ca67c6f994727cbf4f3e045c9888d226a3aa59d918df3c7a01b55a6b",
+    "split": "val",
+    "limit": null,
+    "top_k": 5,
+    "index": {
+      "schema_version": 1,
+      "model": "Qwen/Qwen3-Embedding-0.6B",
+      "model_revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+      "query_instruction": "Instruct: Given an enterprise support question, retrieve passages that contain the facts needed to answer the question.\nQuery: ",
+      "normalized": true,
+      "corpus_sha256": "987235a1a4cae2e73a1ca655b42ce6bd6b01c26411b70bc49648da2d8867c797",
+      "strategy": "paragraph",
+      "max_words": 240,
+      "overlap_words": 40,
+      "chunk_count": 1549
+    },
+    "generator": "mlx-community/Qwen3-4B-Instruct-2507-4bit",
+    "startup": {
+      "embedding_load_and_warmup_ms": 4431.294291978702,
+      "generator_load_and_warmup_ms": 1482.4789580889046,
+      "expander_load_and_warmup_ms": 5238.209916977212
+    },
+    "retriever": "adaptive",
+    "score_type": "rrf",
+    "candidate_depth": 50,
+    "expander": "llama3.2:3b",
+    "expander_backend": {
+      "backend": "ollama",
+      "model": "llama3.2:3b",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "quantization": "Q4_K_M",
+      "parameter_size": "3.2B",
+      "ollama_version": "0.30.11",
+      "options": {
+        "temperature": 0.3,
+        "seeds": [
+          42,
+          43
+        ],
+        "num_ctx": 4096,
+        "num_predict": 64
+      }
+    },
+    "expansion_candidates": 5,
+    "embedding_device": "mps",
+    "hardware": {
+      "platform": "macOS-15.8.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.16",
+      "chip": "Apple M4 Pro",
+      "memory_gb": 48
+    }
+  },
+  "questions": 15,
+  "answerable": 13,
+  "unanswerable": 2,
+  "answer_rate": 0.6,
+  "false_refusal_rate": 0.3076923076923077,
+  "refusal_accuracy_unanswerable": 1.0,
+  "context_gold_recall": 0.9230769230769231,
+  "cites_gold_rate": 0.8888888888888888,
+  "passages_ndcg@5": 0.8278353467033012,
+  "answer_correct_rate": null,
+  "mean_total_ms": 6227.737016743049,
+  "p95_total_ms": 9335.357999894768,
+  "mean_retrieval_ms": 1262.4633695464581,
+  "mean_generation_ms": 4945.443672329809,
+  "mean_llm_tokens": 4487.2,
+  "gate_rate": 0.5333333333333333,
+  "routes": {
+    "refusal": 6,
+    "single_pass": 3,
+    "second_pass": 6
+  },
+  "refusal_reasons": {
+    "model_reported_insufficient_evidence": 4,
+    "quote_not_in_source": 1,
+    "missing_or_excess_citations": 1
+  },
+  "by_question_type": {
+    "basic": {
+      "questions": 5,
+      "answerable": 5,
+      "unanswerable": 0,
+      "answer_rate": 0.6,
+      "false_refusal_rate": 0.4,
+      "refusal_accuracy_unanswerable": null,
+      "context_gold_recall": 0.8,
+      "cites_gold_rate": 0.6666666666666666,
+      "passages_ndcg@5": 0.6261859507142915,
+      "answer_correct_rate": null,
+      "mean_total_ms": 6381.655675033107,
+      "p95_total_ms": 7304.92683313787,
+      "mean_retrieval_ms": 1390.2172250673175,
+      "mean_generation_ms": 4969.499100418761,
+      "mean_llm_tokens": 4779.4,
+      "gate_rate": 0.6,
+      "routes": {
+        "refusal": 2,
+        "single_pass": 1,
+        "second_pass": 2
+      },
+      "refusal_reasons": {
+        "model_reported_insufficient_evidence": 1,
+        "quote_not_in_source": 1
+      }
+    },
+    "constrained": {
+      "questions": 2,
+      "answerable": 2,
+      "unanswerable": 0,
+      "answer_rate": 0.5,
+      "false_refusal_rate": 0.5,
+      "refusal_accuracy_unanswerable": null,
+      "context_gold_recall": 1.0,
+      "cites_gold_rate": 1.0,
+      "passages_ndcg@5": 1.0,
+      "answer_correct_rate": null,
+      "mean_total_ms": 6208.889083005488,
+      "p95_total_ms": 7234.078458044678,
+      "mean_retrieval_ms": 58.864040998741984,
+      "mean_generation_ms": 6135.345229064114,
+      "mean_llm_tokens": 3008.5,
+      "gate_rate": 0.0,
+      "routes": {
+        "refusal": 1,
+        "single_pass": 1
+      },
+      "refusal_reasons": {
+        "missing_or_excess_citations": 1
+      }
+    },
+    "info_not_found": {
+      "questions": 2,
+      "answerable": 0,
+      "unanswerable": 2,
+      "answer_rate": 0.0,
+      "false_refusal_rate": null,
+      "refusal_accuracy_unanswerable": 1.0,
+      "context_gold_recall": null,
+      "cites_gold_rate": null,
+      "passages_ndcg@5": null,
+      "answer_correct_rate": null,
+      "mean_total_ms": 5110.9219380887225,
+      "p95_total_ms": 6636.934709036723,
+      "mean_retrieval_ms": 1436.0009585507214,
+      "mean_generation_ms": 3653.8821454159915,
+      "mean_llm_tokens": 4400.5,
+      "gate_rate": 0.5,
+      "routes": {
+        "refusal": 2
+      },
+      "refusal_reasons": {
+        "model_reported_insufficient_evidence": 2
+      }
+    },
+    "intra_document_reasoning": {
+      "questions": 2,
+      "answerable": 2,
+      "unanswerable": 0,
+      "answer_rate": 0.5,
+      "false_refusal_rate": 0.5,
+      "refusal_accuracy_unanswerable": null,
+      "context_gold_recall": 1.0,
+      "cites_gold_rate": 1.0,
+      "passages_ndcg@5": 1.0,
+      "answer_correct_rate": null,
+      "mean_total_ms": 4610.741603886709,
+      "p95_total_ms": 5681.914541870356,
+      "mean_retrieval_ms": 53.41922945808619,
+      "mean_generation_ms": 4543.211375013925,
+      "mean_llm_tokens": 2793.0,
+      "gate_rate": 0.0,
+      "routes": {
+        "refusal": 1,
+        "single_pass": 1
+      },
+      "refusal_reasons": {
+        "model_reported_insufficient_evidence": 1
+      }
+    },
+    "semantic": {
+      "questions": 4,
+      "answerable": 4,
+      "unanswerable": 0,
+      "answer_rate": 1.0,
+      "false_refusal_rate": 0.0,
+      "refusal_accuracy_unanswerable": null,
+      "context_gold_recall": 1.0,
+      "cites_gold_rate": 1.0,
+      "passages_ndcg@5": 0.9077324383928644,
+      "answer_correct_rate": null,
+      "mean_total_ms": 7411.66790650459,
+      "p95_total_ms": 9335.357999894768,
+      "mean_retrieval_ms": 2222.3239899612963,
+      "mean_generation_ms": 5167.320520966314,
+      "mean_llm_tokens": 5751.75,
+      "gate_rate": 1.0,
+      "routes": {
+        "second_pass": 4
+      },
+      "refusal_reasons": {}
+    }
+  }
+}

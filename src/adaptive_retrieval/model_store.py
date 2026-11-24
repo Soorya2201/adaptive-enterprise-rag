@@ -1,4 +1,4 @@
-"""Explicit downloads; normal demo commands use cached model files only."""
+"""Explicit downloads; normal commands use cached model files only."""
 
 from pathlib import Path
 

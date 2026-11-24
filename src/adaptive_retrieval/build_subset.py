@@ -17,6 +17,7 @@ from collections import Counter, defaultdict
 from multiprocessing import Pool
 from pathlib import Path
 
+from .data import clean_document_text
 from .paths import FULL_DOCUMENTS_DIR, PROCESSED_DIR
 
 SEED = 13
@@ -182,7 +183,7 @@ def main(argv=None):
                 "path": str(path.relative_to(args.root)),
                 "is_gold": doc_id in gold_ids,
                 "mined_for": neg_ids.get(doc_id, []),
-                "text": path.read_text(encoding="utf-8", errors="ignore"),
+                "text": clean_document_text(path.read_text(encoding="utf-8", errors="ignore")),
             }) + "\n")
 
     dev_basic = [q for q in selected if q["question_type"] == "basic" and q["split"] == "dev"]

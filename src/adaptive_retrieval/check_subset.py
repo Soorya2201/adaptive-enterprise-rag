@@ -11,6 +11,7 @@ import json
 import sys
 from pathlib import Path
 
+from .data import clean_document_text
 from .paths import PROCESSED_DIR, SUBSET_DOCUMENTS_DIR
 
 
@@ -50,7 +51,7 @@ def main(argv=None):
     for doc_id, doc in corpus.items():
         if (
             doc_id in files
-            and files[doc_id].read_text(encoding="utf-8", errors="ignore")
+            and clean_document_text(files[doc_id].read_text(encoding="utf-8", errors="ignore"))
             != doc["text"]
         ):
             errors.append(f"{doc_id}: text in {corpus_path} differs from {files[doc_id]}")

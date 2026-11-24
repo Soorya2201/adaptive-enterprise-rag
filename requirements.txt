@@ -1,8 +1,8 @@
-# Midterm demo on Apple Silicon, Python 3.11+:
+# Local RAG on Apple Silicon, Python 3.11+:
 #   conda activate CS544-RAG
 #   python -m pip install -r requirements.txt
 # Models download separately with: python src/runner.py download-models
--e .[demo,hybrid]
+-e .[rag,hybrid]
 # Versions exercised in CS544-RAG. MLX is only installed on Apple Silicon.
 sentence-transformers==6.1.0
 transformers==5.20.2

@@ -4,34 +4,39 @@ import argparse
 from pathlib import Path
 from time import perf_counter
 
-from adaptive_retrieval import build_subset, check_subset, demo, prepare_subset
+from adaptive_retrieval import build_subset, check_subset, prepare_subset
 from adaptive_retrieval.ablation import remove_document
 from adaptive_retrieval.chunking import (
     chunk_documents, fit_chunks_to_token_limit, load_chunks, write_chunks,
 )
 from adaptive_retrieval.data import DEFAULT_CORPUS, load_documents
 from adaptive_retrieval.embedding import LocalEmbedder
-from adaptive_retrieval.evaluate import format_summary, run_evaluation
+from adaptive_retrieval.evaluate import SPLITS, format_summary, run_evaluation
+from adaptive_retrieval.expansion import DEFAULT_OLLAMA_MODEL
 from adaptive_retrieval.interactive import SearchSession, run_interactive
-from adaptive_retrieval.hybrid_search import OptimizedSearchSession
+from adaptive_retrieval.hybrid_search import RETRIEVERS
 from adaptive_retrieval.paths import (
-    FULL_DOCUMENTS_DIR, PROCESSED_DIR, RESULTS_DIR, SUBSET_DOCUMENTS_DIR,
+    DATA_DIR, FULL_DOCUMENTS_DIR, PROCESSED_DIR, RESULTS_DIR, SUBSET_DOCUMENTS_DIR,
 )
 from adaptive_retrieval.vector_index import file_sha256, write_index
 from adaptive_retrieval.model_store import download_models
-from adaptive_retrieval.rag_cli import run_rag
+from adaptive_retrieval.cache import DEFAULT_THRESHOLD
+from adaptive_retrieval.rag_cli import open_search_session, run_cache_eval, run_rag, run_rag_eval
 
 
 DEFAULT_CHUNKS = PROCESSED_DIR / "chunks.jsonl"
 DEFAULT_INDEX = PROCESSED_DIR / "qwen_index.jsonl"
+DEFAULT_QUESTIONS = PROCESSED_DIR / "subset_questions.jsonl"
+DEFAULT_CACHE_SEEDS = DATA_DIR / "cache_seeds" / "cache_seed_questions_loaders_complete.txt"
+# Chosen for all remaining experiments; see docs/ARCHITECTURE.md for the comparison.
+DEFAULT_MAX_WORDS = 240
+DEFAULT_OVERLAP_WORDS = 40
 
 
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Prepare and search the enterprise retrieval subset")
     commands = parser.add_subparsers(dest="command", required=True)
 
-    sample = commands.add_parser("demo", help="Search synthetic sample documents without a model")
-    sample.add_argument("question", nargs="?", default="reset password")
     commands.add_parser("download-models", help="Download pinned Qwen models for offline use")
 
     prepare = commands.add_parser("prepare-subset", help="Prepare the checked-in 100-question subset")
@@ -43,7 +48,7 @@ def create_parser() -> argparse.ArgumentParser:
     build.add_argument("--out", type=Path, default=PROCESSED_DIR)
 
     check = commands.add_parser("check-subset", help="Validate generated questions and documents")
-    check.add_argument("--questions", type=Path, default=PROCESSED_DIR / "subset_questions.jsonl")
+    check.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS)
     check.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     check.add_argument("--docs-dir", type=Path, default=SUBSET_DOCUMENTS_DIR)
 
@@ -51,8 +56,8 @@ def create_parser() -> argparse.ArgumentParser:
     chunk.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     chunk.add_argument("--out", type=Path, default=DEFAULT_CHUNKS)
     chunk.add_argument("--strategy", choices=("paragraph", "fixed"), default="paragraph")
-    chunk.add_argument("--max-words", type=int, default=240)
-    chunk.add_argument("--overlap-words", type=int, default=40)
+    chunk.add_argument("--max-words", type=int, default=DEFAULT_MAX_WORDS)
+    chunk.add_argument("--overlap-words", type=int, default=DEFAULT_OVERLAP_WORDS)
 
     embed = commands.add_parser("embed", help="Encode chunks locally and save a searchable index")
     embed.add_argument("--chunks", type=Path, default=DEFAULT_CHUNKS)
@@ -68,10 +73,23 @@ def create_parser() -> argparse.ArgumentParser:
     evaluate = commands.add_parser(
         "evaluate", help="Score document retrieval on every labeled question and save results"
     )
-    evaluate.add_argument("--questions", type=Path, default=PROCESSED_DIR / "subset_questions.jsonl")
-    evaluate.add_argument("--index", type=Path, default=DEFAULT_INDEX)
-    evaluate.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
-    evaluate.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
+    rag_eval = commands.add_parser(
+        "rag-eval", help="Run the full RAG pipeline over a question split and save metrics"
+    )
+    for command in (evaluate, rag_eval):
+        command.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS)
+        command.add_argument("--index", type=Path, default=DEFAULT_INDEX)
+        command.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
+        command.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
+        command.add_argument("--split", choices=(*SPLITS, "all"), default="dev")
+        command.add_argument("--limit", type=int, help="Evaluate only the first N questions")
+    evaluate.add_argument(
+        "--repeats", type=int, default=1,
+        help="Passes over the questions in seeded random order; the midterm used 8",
+    )
+    rag_eval.add_argument("--top-k", type=int, choices=range(1, 21), default=5)
+    rag_eval.add_argument("--max-new-tokens", type=int, default=512)
+    rag_eval.add_argument("--max-prompt-tokens", type=int, default=4096)
 
     interactive = commands.add_parser(
         "interactive", aliases=["chat"], help="Ask repeated questions and inspect source documents"
@@ -94,13 +112,56 @@ def create_parser() -> argparse.ArgumentParser:
         rag.add_argument("--max-prompt-tokens", type=int, default=4096)
         rag.add_argument("--show-sources", action="store_true")
         rag.add_argument("--trace", type=Path, help="Append results to this JSONL path")
+        rag.add_argument(
+            "--cache", type=Path,
+            help="Verified-answer cache file (JSONL); reuse and store checked answers",
+        )
+        rag.add_argument("--cache-threshold", type=float, default=DEFAULT_THRESHOLD)
+        rag.add_argument("--cache-judge", choices=("qwen", "llama"), default="qwen")
+        rag.add_argument(
+            "--key-term-veto", action="store_true",
+            help="Refuse reuse when numbers, identifiers or regions differ (off by default)",
+        )
+    cache_eval = commands.add_parser(
+        "cache-eval", help="Warm the answer cache with seed questions, then test paraphrases and near-misses",
+    )
+    cache_eval.add_argument("--seeds", type=Path, default=DEFAULT_CACHE_SEEDS)
+    cache_eval.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS)
+    cache_eval.add_argument("--index", type=Path, default=DEFAULT_INDEX)
+    cache_eval.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
+    cache_eval.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
+    cache_eval.add_argument("--top-k", type=int, choices=range(1, 21), default=5)
+    cache_eval.add_argument("--max-new-tokens", type=int, default=512)
+    cache_eval.add_argument("--max-prompt-tokens", type=int, default=4096)
+    cache_eval.add_argument("--cache-threshold", type=float, default=DEFAULT_THRESHOLD)
+    cache_eval.add_argument("--judges", nargs="+", choices=("qwen", "llama"), default=["qwen", "llama"])
+    cache_eval.add_argument(
+        "--key-term-veto", action="store_true",
+        help="Refuse reuse when numbers, identifiers or regions differ (off by default)",
+    )
+    cache_eval.add_argument(
+        "--warm", choices=("generated", "gold"), default="generated",
+        help="gold tests the cache alone by storing benchmark answers instead of generated ones",
+    )
+    cache_eval.add_argument(
+        "--require-exact-quotes", action="store_true",
+        help="Store only answers whose quotes all matched exactly",
+    )
     ablate = commands.add_parser("ablate", help="Copy a corpus/index pair with one document removed")
     ablate.add_argument("document_id")
     ablate.add_argument("--index", type=Path, default=DEFAULT_INDEX)
     ablate.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
-    ablate.add_argument("--out-dir", type=Path, default=PROCESSED_DIR / "ablation_demo")
-    for command in (search, evaluate, interactive, commands.choices["ask"], commands.choices["rag"]):
-        command.add_argument("--retriever", choices=("hybrid", "cosine"), default="hybrid")
+    ablate.add_argument("--out-dir", type=Path, default=PROCESSED_DIR / "ablation")
+    for command in (
+        search, evaluate, rag_eval, interactive, commands.choices["ask"], commands.choices["rag"],
+        cache_eval,
+    ):
+        command.add_argument("--retriever", choices=RETRIEVERS, default="hybrid")
+        command.add_argument(
+            "--expander", choices=("ollama", "mlx"), default="ollama",
+            help="LameR backend for hybrid_lamer/adaptive (ollama matches the midterm runs)",
+        )
+        command.add_argument("--expansion-model", default=DEFAULT_OLLAMA_MODEL)
     return parser
 
 
@@ -108,9 +169,7 @@ def main(argv: list[str] | None = None) -> None:
     parser = create_parser()
     args = parser.parse_args(argv)
     try:
-        if args.command == "demo":
-            demo.main([args.question])
-        elif args.command == "download-models":
+        if args.command == "download-models":
             download_models()
         elif args.command == "prepare-subset":
             prepare_subset.main(["--root", str(args.root), "--out", str(args.out)])
@@ -168,22 +227,28 @@ def main(argv: list[str] | None = None) -> None:
                 f"chunks with {embedder.model_name}: {args.out}"
             )
         elif args.command in {"search", "evaluate", "interactive", "chat"}:
-            with OptimizedSearchSession(
-                SearchSession(args.index, args.corpus), retriever=args.retriever,
-            ) as session:
+            with open_search_session(args) as session:
                 if args.command == "search":
                     for chunk, score in session.search(args.question, args.top_k):
                         source = chunk.path or chunk.source
                         print(f"{chunk.id} | {session.score_type}={score:.3f} | {source} | chars {chunk.start_char}:{chunk.end_char}")
                         print(chunk.text[:350].replace("\n", " "))
                 elif args.command == "evaluate":
-                    run_dir, summary = run_evaluation(session, args.questions, args.out_dir)
+                    run_dir, summary = run_evaluation(
+                        session, args.questions, args.out_dir,
+                        split=None if args.split == "all" else args.split, limit=args.limit,
+                        repeats=args.repeats,
+                    )
                     print(format_summary(summary))
                     print(f"\nSaved per-question results and summary: {run_dir}")
                 else:
                     run_interactive(session, args.top_k)
         elif args.command in {"ask", "rag"}:
             run_rag(args)
+        elif args.command == "rag-eval":
+            run_rag_eval(args)
+        elif args.command == "cache-eval":
+            run_cache_eval(args)
         elif args.command == "ablate":
             corpus, index = remove_document(args.corpus, args.index, args.document_id, args.out_dir)
             print(f"Removed {args.document_id}; corpus: {corpus}; index: {index}")

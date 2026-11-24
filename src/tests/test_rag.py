@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from adaptive_retrieval.embedding import LocalEmbedder, QUERY_INSTRUCTION
 from adaptive_retrieval.generation import (
-    GenerationOutput, PreparedPrompt, check_answer, prepare_prompt,
+    GenerationOutput, PreparedPrompt, check_answer, citation_markers, prepare_prompt, quote_match,
 )
 from adaptive_retrieval.models import Chunk
 from adaptive_retrieval.pipeline import RagPipeline
@@ -69,6 +69,130 @@ class CitationTests(unittest.TestCase):
         self.assertEqual(check_answer(output(record), {"S1": CHUNK}).status, "answer")
         record["citations"][0]["quote"] = "Create a replacement key and immediately revoke the old key."
         self.assertEqual(check_answer(output(record), {"S1": CHUNK}).status, "refusal")
+
+
+LIST_CHUNK = Chunk(
+    "runbook::chunk-0", "runbook",
+    "Mitigation:\n- Use an idempotency key to avoid double processing.\n"
+    "- Retry with **exponential backoff** and jitter.\n"
+    "> The `api_key` header is required for every retry.",
+    "wiki", "wiki/runbook.md", 0, 160,
+)
+
+
+class TolerantQuoteTests(unittest.TestCase):
+    def test_formatting_the_model_drops_still_matches(self):
+        cases = {
+            "Use an idempotency key to avoid double processing.": "exact",
+            "use an idempotency key to avoid double processing": "formatting",
+            "Retry with exponential backoff and jitter.": "formatting",
+            "The api_key header is required for every retry.": "formatting",
+            "\u201cRetry with exponential backoff and jitter.\u201d": "formatting",
+            "...Use an idempotency key to avoid double processing...": "formatting",
+        }
+        for quote, kind in cases.items():
+            with self.subTest(quote=quote):
+                self.assertEqual(quote_match(quote, LIST_CHUNK.text), kind)
+
+    def test_changed_reordered_or_tiny_segments_do_not_match(self):
+        for quote in [
+            "Use an idempotency key to avoid triple processing.",
+            "Retry with exponential backoff... use an idempotency key",
+            "Use an... retry with exponential backoff",
+            "Use an idempotency key... retry with exponential backoff",
+            "Retry with exponential backoff - jitter",
+            "Retry with exponential backoff and jitter. Always.",
+        ]:
+            with self.subTest(quote=quote):
+                self.assertIsNone(quote_match(quote, LIST_CHUNK.text))
+
+    def test_cropping_or_formatting_cannot_change_the_meaning(self):
+        cases = [
+            ("5 business days for delivery", "We need 15 business days for delivery."),
+            ("5 business days for delivery", "We need 1.5 business days for delivery."),
+            ("096 bytes is the header limit", "4,096 bytes is the header limit"),
+            ("30 minutes is the typical time", "15-30 minutes is the typical time"),
+            ("30 minutes is the typical time", "15 to 30 minutes is the typical time"),
+            ("30 minutes is the typical time", "15 - 30 minutes is the typical time"),
+            ("the typical wait in minutes is 15", "the typical wait in minutes is 15 to 30"),
+            ("latency target is 15", "latency target is 150 ms"),
+            ("latency target is 15", "latency target is 15 %"),
+            ("the budget ceiling is 5", "the budget ceiling is 5 million"),
+            ("5% margin change expected", "-5% margin change expected"),
+            ("available in us-east region", "The API is unavailable in us-east region."),
+            ("available in us-east region", "The API is not available in us-east region."),
+            ("available in us-east region", "The API isn't currently available in us-east region."),
+            ("production traffic is allowed", "non-production traffic is allowed"),
+            ("The service is ... available in us-east", "The service is not currently available in us-east."),
+            ("Acme response time ... is 4 hours", "Acme response time is 9 hours. Globex is 4 hours."),
+            ("the limit is 23 requests", "the limit is 2*3 requests"),
+            ("the capacity is 102 units", "the capacity is 10" + chr(0xB2) + " units"),
+            ("set maxtokens to the limit", "set max_tokens to the limit"),
+            ("500 ms triggers a page", "Rule:" + chr(10) + "> 500 ms triggers a page"),
+            ("2000ms for 10 minutes", "P95 latency > 2000ms for 10 minutes."),
+            ("2000ms for 10 minutes", "P95 latency >2000ms for 10 minutes."),
+            ("link speed is 10 MB per second", "link speed is 10 Mb per second"),
+            ("ask us for the report", "ask US for the report"),
+            ("5) Emit detailed telemetry", "3) Emit detailed telemetry"),
+            ("045) to ensure the proxy restarts", "(p = 0.045) to ensure the proxy restarts"),
+        ]
+        for quote, source in cases:
+            with self.subTest(quote=quote, source=source):
+                self.assertIsNone(quote_match(quote, source))
+
+    def test_legitimate_crops_still_match(self):
+        for quote, source in [
+            ("eviction_rate > 0.5% for pages", "thresholds (eviction_rate > 0.5% for pages), then page"),
+            ("30 seconds is the new timeout", "It moved to 30 seconds is the new timeout"),
+            ("available in us-east region", "No downtime, available in us-east region."),
+            ("Emit detailed telemetry", "3) Emit **detailed** telemetry"),
+            ("3) Emit detailed telemetry", "3) Emit **detailed** telemetry"),
+            ("5 replicas per region", "Plan:" + chr(10) + "- 5 replicas per region"),
+            ("5 business days for delivery", "15 business days for delivery or 5 business days for delivery."),
+        ]:
+            with self.subTest(quote=quote):
+                self.assertIsNotNone(quote_match(quote, source))
+
+    def test_cropped_digit_cannot_become_a_verified_answer(self):
+        chunk = Chunk("c", "d", "We need 15 business days for delivery.", "w", None, 0, 38)
+        record = {"status": "answer", "answer": "5 business days. [S1]",
+                  "citations": [{"source": "S1", "quote": "5 business days for delivery"}]}
+        self.assertEqual(check_answer(output(record), {"S1": chunk}).reason, "quote_not_in_source")
+
+    def test_grouped_markers_are_parsed_and_other_brackets_ignored(self):
+        self.assertEqual(
+            citation_markers("Retry [S1, S2] and log [S3][S4] before [DONE] or [S5 and 6]."),
+            {"S1", "S2", "S3", "S4"},
+        )
+
+    def test_markers_must_be_quoted_sources_but_quotes_need_not_be_marked(self):
+        sources = {"S1": CHUNK, "S2": LIST_CHUNK}
+        record = {
+            "status": "answer",
+            "answer": "Rotate the key, then retry with backoff. [S1, S2]",
+            "citations": [
+                {"source": "S1", "quote": CHUNK.text},
+                {"source": "S2", "quote": "- Retry with exponential backoff and jitter."},
+            ],
+        }
+        checked = check_answer(output(record), sources)
+        self.assertEqual(checked.status, "answer")
+        self.assertEqual([c["quote_match"] for c in checked.citations], ["exact", "formatting"])
+        record["answer"] = "Rotate the key. [S1]"
+        self.assertEqual(check_answer(output(record), sources).status, "answer")
+        record["answer"] = "Rotate the key. [S1][S2][S3]"
+        self.assertEqual(check_answer(output(record), sources).reason, "citation_markers_do_not_match")
+        record["answer"] = "Rotate the key."
+        self.assertEqual(check_answer(output(record), sources).reason, "citation_markers_do_not_match")
+
+    def test_quote_must_come_from_the_cited_source(self):
+        record = {
+            "status": "answer",
+            "answer": "Retry with backoff. [S1]",
+            "citations": [{"source": "S1", "quote": "Retry with exponential backoff and jitter."}],
+        }
+        checked = check_answer(output(record), {"S1": CHUNK, "S2": LIST_CHUNK})
+        self.assertEqual(checked.reason, "quote_not_in_source")
 
 
 class ContextTests(unittest.TestCase):
