@@ -1,0 +1,39 @@
+{
+  "frozen_utc": "2026-11-24T03:09:02.167382+00:00",
+  "settings": {
+    "benchmark_manifest_sha256": "31694829ac34fcfe3532a842e60cd3d7f8fa301fb621fddc02f915a8afba3b2a",
+    "index_sha256": "750539ba7768cc09b895322485e36f56ed84cd9b26e25905cd1abbedac04edc2",
+    "split": "val",
+    "retriever": "hybrid",
+    "top_k": 5,
+    "retry_top_k": 10,
+    "threshold": 0.8,
+    "max_new_tokens": 512,
+    "max_prompt_tokens": 4096,
+    "selected_questions_canonical_sha256": "3130a8032b72ecc6d42cd424746f871a4762e6b90818dfaf67fbc797addee7ea",
+    "package_versions": {
+      "torch": "2.14.1",
+      "transformers": "5.20.2",
+      "mlx-lm": "0.32.2",
+      "sentence-transformers": "6.1.0",
+      "faiss-cpu": "1.15.1",
+      "bm25s": "0.2.14"
+    },
+    "implementation_sha256": {
+      "final_experiment": "d9ebf83c5e6d82847472d66be2b650ea90fab4c6c7e6bc5c5f585d057ec2b47f",
+      "nli": "22b09c76e8145ef3d27239470b4dc04a3a150e37d80ea6676be7e9bd22c6b4c1",
+      "pipeline": "34310f91d4a79be0c4f64104b4b588baf7818387f1ae1a56e5d7fcb947604e0d",
+      "generation": "d60c9220bca1712b5f15a08ed031a442081fd706e94a48d18c658c9382c78c54",
+      "embedding": "1f37d078f87a68077c38047e414bc30c19d203d19e6b9f49bd10f223d6938e2d",
+      "interactive": "7678f6e09639c62c9d8e8c9a73280af813b2518fb579cf91c825fee347eb0606",
+      "hybrid_search": "93ee1fdbc2d95227971c415aa3cf759da57278811cc49e8f0ad917a8dcfb0037",
+      "vector_index": "f8e333720450a06225e8bba2c2bafce6926925a3cdd69e9e2c9bbfd211957bdb"
+    },
+    "generation_revisions": {
+      "Qwen/Qwen3-Embedding-0.6B": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+      "mlx-community/Qwen3-4B-Instruct-2507-4bit": "50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b"
+    },
+    "nli_revision": "fa2804872c3b4bd748f38c0185cc85775361e735",
+    "policy": "nli-gated fixed vs one bounded wider-context retry v1"
+  }
+}

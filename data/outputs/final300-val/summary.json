@@ -1,0 +1,56 @@
+{
+  "fixed": {
+    "questions": 45,
+    "status": {
+      "refusal": 44,
+      "answer": 1
+    },
+    "route": {
+      "refusal": 44,
+      "single_pass": 1
+    },
+    "refusal_reasons": {
+      "nli_not_entailed": 21,
+      "quote_not_in_source": 8,
+      "model_reported_insufficient_evidence": 9,
+      "citation_markers_do_not_match": 2,
+      "missing_or_excess_citations": 3,
+      "invalid_quote": 1
+    },
+    "nli_blocked_answers": 21,
+    "mean_total_s": 34.0,
+    "p95_total_s": 50.3,
+    "mean_prompt_tokens": 2675,
+    "mean_output_tokens": 118,
+    "answered_ids": [
+      "qst_0048"
+    ]
+  },
+  "adaptive": {
+    "questions": 45,
+    "status": {
+      "refusal": 44,
+      "answer": 1
+    },
+    "route": {
+      "refusal": 44,
+      "single_pass": 1
+    },
+    "refusal_reasons": {
+      "nli_not_entailed": 20,
+      "quote_not_in_source": 13,
+      "citation_markers_do_not_match": 1,
+      "model_reported_insufficient_evidence": 7,
+      "missing_or_excess_citations": 3
+    },
+    "nli_blocked_answers": 20,
+    "mean_total_s": 52.5,
+    "p95_total_s": 86.8,
+    "mean_prompt_tokens": 6496,
+    "mean_output_tokens": 243,
+    "answered_ids": [
+      "qst_0048"
+    ]
+  },
+  "note": "Validation split only (45 q). Unreviewed: no human correctness judgments. Test split not run: settings not yet settled on validation."
+}
