@@ -1,0 +1,65 @@
+{
+  "fixed": {
+    "questions": 45,
+    "status": {
+      "refusal": 44,
+      "answer": 1
+    },
+    "route": {
+      "refusal": 44,
+      "single_pass": 1
+    },
+    "refusal_reasons": {
+      "nli_not_entailed": 24,
+      "quote_not_in_source": 7,
+      "model_reported_insufficient_evidence": 9,
+      "missing_or_excess_citations": 3,
+      "invalid_quote": 1
+    },
+    "nli_blocked_answers": 24,
+    "mean_total_s": 31.1,
+    "p95_total_s": 44.2,
+    "mean_prompt_tokens": 2675,
+    "mean_output_tokens": 118,
+    "answered_ids": [
+      "qst_0048"
+    ]
+  },
+  "adaptive": {
+    "questions": 45,
+    "status": {
+      "refusal": 44,
+      "answer": 1
+    },
+    "route": {
+      "refusal": 44,
+      "single_pass": 1
+    },
+    "refusal_reasons": {
+      "nli_not_entailed": 19,
+      "quote_not_in_source": 13,
+      "citation_markers_do_not_match": 2,
+      "model_reported_insufficient_evidence": 7,
+      "missing_or_excess_citations": 3
+    },
+    "nli_blocked_answers": 19,
+    "mean_total_s": 68.1,
+    "p95_total_s": 96.4,
+    "mean_prompt_tokens": 6496,
+    "mean_output_tokens": 243,
+    "answered_ids": [
+      "qst_0048"
+    ]
+  },
+  "nli_window_diagnostic": {
+    "finding": "nli-deberta-v3-small entailment collapses on long premises; checking claims against 512-token windows rejects supported claims.",
+    "example": "same claim vs cited quote with ~112-175 tokens of context: 0.99; vs full 362-token passage: 0.03",
+    "offline_regate_fixed_at_0.8": {
+      "current_512_token_windows": "1/45",
+      "128_token_windows": "8/45",
+      "192_token_windows": "9/45"
+    },
+    "note": "Offline re-scoring of the saved fixed answers only; generation unchanged. Lowering the threshold with 512-token windows does not help (2/45 at 0.5)."
+  },
+  "note": "Validation split only (45 q), code at main 1339538. Unreviewed: no human correctness judgments. Test split not run."
+}
