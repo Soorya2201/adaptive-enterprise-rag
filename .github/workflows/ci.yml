@@ -11,6 +11,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      # Data preparation must work before any optional package is installed.
+      - run: python -m pip install -e .
+      - run: |
+          python src/runner.py prepare-subset --out "$RUNNER_TEMP/subset"
+          python src/runner.py check-subset --corpus "$RUNNER_TEMP/subset/subset_corpus.jsonl" --questions "$RUNNER_TEMP/subset/subset_questions.jsonl"
       - run: python -m pip install -e '.[hybrid]'
       - run: python -m unittest discover -s src/tests -v
-      - run: python src/runner.py demo

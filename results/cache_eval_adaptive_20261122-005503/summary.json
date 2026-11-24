@@ -1,0 +1,4203 @@
+{
+  "run": {
+    "timestamp_utc": "2026-11-22T00:55:03+00:00",
+    "git_commit": "46fb5e837bee29dec2311a320e837fce79023c46",
+    "working_tree_dirty": true,
+    "seeds_path": "/Users/johntsoi/USC/Fall 2026/CS 544/adaptive-enterprise-retrieval/data/cache_seeds/cache_seed_questions_loaders_complete.txt",
+    "seeds_sha256": "fc9c6a54028b20bc46dc16f4c5a58644ac1f8c64f80a87ef24dbe3219af38112",
+    "top_k": 5,
+    "evidence_top_k": 5,
+    "require_exact_quotes": false,
+    "versions": {
+      "embedding": "Qwen/Qwen3-Embedding-0.6B",
+      "embedding_revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+      "query_instruction": "Instruct: Given an enterprise support question, retrieve passages that contain the facts needed to answer the question.\nQuery: ",
+      "generator": "mlx-community/Qwen3-4B-Instruct-2507-4bit",
+      "generator_revision": "50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b",
+      "prompt_version": "midterm-v3",
+      "checker_version": "tolerant-quotes-v1"
+    },
+    "generator": "mlx-community/Qwen3-4B-Instruct-2507-4bit",
+    "retriever": "adaptive",
+    "score_type": "rrf",
+    "candidate_depth": 50,
+    "expander": "llama3.2:3b",
+    "expander_backend": {
+      "backend": "ollama",
+      "model": "llama3.2:3b",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "quantization": "Q4_K_M",
+      "parameter_size": "3.2B",
+      "ollama_version": "0.30.11",
+      "options": {
+        "temperature": 0.3,
+        "seeds": [
+          42,
+          43
+        ],
+        "num_ctx": 4096,
+        "num_predict": 64
+      }
+    },
+    "expansion_candidates": 5,
+    "embedding_device": "mps",
+    "hardware": {
+      "platform": "macOS-15.8.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.16",
+      "chip": "Apple M4 Pro",
+      "memory_gb": 48
+    }
+  },
+  "seeds": 30,
+  "seeds_cached": 30,
+  "seeds_not_cached": {},
+  "seed_answers_changed_since_template": [],
+  "variants": 30,
+  "variants_scored": 30,
+  "variants_skipped_seed_not_cached": 0,
+  "chosen_threshold_on_dev": 0.98,
+  "at_chosen_threshold": {
+    "dev": {
+      "threshold": 0.98,
+      "paraphrases": 11,
+      "near_misses": 11,
+      "paraphrase_hit_rate": 0.09090909090909091,
+      "wrong_entry": 0,
+      "near_miss_wrong_reuse_rate": 0.0,
+      "wrong_reuse": 0,
+      "propagated_errors": 1,
+      "propagated_error_seeds": [
+        "qst_0046"
+      ],
+      "hits_on_unreviewed_answers": [],
+      "miss_reasons": {
+        "similar": 10
+      }
+    },
+    "val": {
+      "threshold": 0.98,
+      "paraphrases": 4,
+      "near_misses": 4,
+      "paraphrase_hit_rate": 0.0,
+      "wrong_entry": 0,
+      "near_miss_wrong_reuse_rate": 0.0,
+      "wrong_reuse": 0,
+      "propagated_errors": 0,
+      "propagated_error_seeds": [],
+      "hits_on_unreviewed_answers": [],
+      "miss_reasons": {
+        "similar": 4
+      }
+    }
+  },
+  "at_chosen_threshold_all": {
+    "threshold": 0.98,
+    "paraphrases": 15,
+    "near_misses": 15,
+    "paraphrase_hit_rate": 0.06666666666666667,
+    "wrong_entry": 0,
+    "near_miss_wrong_reuse_rate": 0.0,
+    "wrong_reuse": 0,
+    "propagated_errors": 1,
+    "propagated_error_seeds": [
+      "qst_0046"
+    ],
+    "hits_on_unreviewed_answers": [],
+    "miss_reasons": {
+      "similar": 14
+    }
+  },
+  "ablations_at_chosen_threshold": {
+    "similarity_only": {
+      "threshold": 0.98,
+      "paraphrases": 15,
+      "near_misses": 15,
+      "paraphrase_hit_rate": 0.06666666666666667,
+      "wrong_entry": 0,
+      "near_miss_wrong_reuse_rate": 0.0,
+      "wrong_reuse": 0,
+      "propagated_errors": 1,
+      "propagated_error_seeds": [
+        "qst_0046"
+      ],
+      "hits_on_unreviewed_answers": [],
+      "miss_reasons": {
+        "similar": 14
+      }
+    },
+    "similarity_key_terms": {
+      "threshold": 0.98,
+      "paraphrases": 15,
+      "near_misses": 15,
+      "paraphrase_hit_rate": 0.06666666666666667,
+      "wrong_entry": 0,
+      "near_miss_wrong_reuse_rate": 0.0,
+      "wrong_reuse": 0,
+      "propagated_errors": 1,
+      "propagated_error_seeds": [
+        "qst_0046"
+      ],
+      "hits_on_unreviewed_answers": [],
+      "miss_reasons": {
+        "similar": 14
+      }
+    },
+    "similarity_evidence": {
+      "threshold": 0.98,
+      "paraphrases": 15,
+      "near_misses": 15,
+      "paraphrase_hit_rate": 0.06666666666666667,
+      "wrong_entry": 0,
+      "near_miss_wrong_reuse_rate": 0.0,
+      "wrong_reuse": 0,
+      "propagated_errors": 1,
+      "propagated_error_seeds": [
+        "qst_0046"
+      ],
+      "hits_on_unreviewed_answers": [],
+      "miss_reasons": {
+        "similar": 14
+      }
+    },
+    "all_checks": {
+      "threshold": 0.98,
+      "paraphrases": 15,
+      "near_misses": 15,
+      "paraphrase_hit_rate": 0.06666666666666667,
+      "wrong_entry": 0,
+      "near_miss_wrong_reuse_rate": 0.0,
+      "wrong_reuse": 0,
+      "propagated_errors": 1,
+      "propagated_error_seeds": [
+        "qst_0046"
+      ],
+      "hits_on_unreviewed_answers": [],
+      "miss_reasons": {
+        "similar": 14
+      }
+    }
+  },
+  "latency": {
+    "mean_lookup_ms": 33.67270420009542,
+    "p95_lookup_ms": 39.43795899976976,
+    "mean_full_pipeline_ms": 6575.853452832477,
+    "mean_llm_tokens_full_pipeline": 4207.366666666667
+  },
+  "sweeps": {
+    "similarity_only": {
+      "dev": [
+        {
+          "threshold": 0.7,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.9090909090909091,
+          "wrong_reuse": 10,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.71,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.9090909090909091,
+          "wrong_reuse": 10,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.72,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.9090909090909091,
+          "wrong_reuse": 10,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.73,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.9090909090909091,
+          "wrong_reuse": 10,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.74,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.8181818181818182,
+          "wrong_reuse": 9,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.75,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.8181818181818182,
+          "wrong_reuse": 9,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.76,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.7272727272727273,
+          "wrong_reuse": 8,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.77,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.7272727272727273,
+          "wrong_reuse": 8,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.78,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.6363636363636364,
+          "wrong_reuse": 7,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.79,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.6363636363636364,
+          "wrong_reuse": 7,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.8,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.6363636363636364,
+          "wrong_reuse": 7,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.81,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.6363636363636364,
+          "wrong_reuse": 7,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.82,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5454545454545454,
+          "wrong_reuse": 6,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.83,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5454545454545454,
+          "wrong_reuse": 6,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.84,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5454545454545454,
+          "wrong_reuse": 6,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.85,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.86,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.8181818181818182,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 2
+          }
+        },
+        {
+          "threshold": 0.87,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.8181818181818182,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 2
+          }
+        },
+        {
+          "threshold": 0.88,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.7272727272727273,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.36363636363636365,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 3
+          }
+        },
+        {
+          "threshold": 0.89,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.6363636363636364,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.36363636363636365,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.9,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.6363636363636364,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.91,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.92,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.93,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.94,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.36363636363636365,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 7
+          }
+        },
+        {
+          "threshold": 0.95,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.96,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.97,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.98,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.09090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 10
+          }
+        },
+        {
+          "threshold": 0.99,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 11
+          }
+        }
+      ],
+      "val": [
+        {
+          "threshold": 0.7,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.71,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.72,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.73,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.74,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.75,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.76,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.77,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.78,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.79,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.8,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.81,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.82,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.83,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.84,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.85,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.86,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.87,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.88,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.89,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.9,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.91,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.92,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.93,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.94,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.95,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.96,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.97,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.25,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 3
+          }
+        },
+        {
+          "threshold": 0.98,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.99,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        }
+      ]
+    },
+    "similarity_key_terms": {
+      "dev": [
+        {
+          "threshold": 0.7,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.71,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.72,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.73,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.74,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.36363636363636365,
+          "wrong_reuse": 4,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.75,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.36363636363636365,
+          "wrong_reuse": 4,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.76,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.77,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.78,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.79,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.8,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.81,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.82,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.83,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.84,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.85,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.8181818181818182,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1,
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.86,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.7272727272727273,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 2,
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.87,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.7272727272727273,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 2,
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.88,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.7272727272727273,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 3
+          }
+        },
+        {
+          "threshold": 0.89,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.6363636363636364,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.9,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.6363636363636364,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.91,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.92,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.93,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.94,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.36363636363636365,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 7
+          }
+        },
+        {
+          "threshold": 0.95,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.96,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.97,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.98,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.09090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 10
+          }
+        },
+        {
+          "threshold": 0.99,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 11
+          }
+        }
+      ],
+      "val": [
+        {
+          "threshold": 0.7,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.71,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.72,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.73,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.74,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.75,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.76,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.77,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.78,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.79,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.8,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.81,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.82,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.83,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.84,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.85,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.86,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.87,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.88,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.89,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.9,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.91,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.92,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.93,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.94,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.95,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.96,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.97,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.25,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 3
+          }
+        },
+        {
+          "threshold": 0.98,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.99,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        }
+      ]
+    },
+    "similarity_evidence": {
+      "dev": [
+        {
+          "threshold": 0.7,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.9090909090909091,
+          "wrong_reuse": 10,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.71,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.9090909090909091,
+          "wrong_reuse": 10,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.72,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.9090909090909091,
+          "wrong_reuse": 10,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.73,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.9090909090909091,
+          "wrong_reuse": 10,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.74,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.8181818181818182,
+          "wrong_reuse": 9,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.75,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.8181818181818182,
+          "wrong_reuse": 9,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.76,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.7272727272727273,
+          "wrong_reuse": 8,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.77,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.7272727272727273,
+          "wrong_reuse": 8,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.78,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.6363636363636364,
+          "wrong_reuse": 7,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.79,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.6363636363636364,
+          "wrong_reuse": 7,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.8,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.6363636363636364,
+          "wrong_reuse": 7,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.81,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.6363636363636364,
+          "wrong_reuse": 7,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.82,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5454545454545454,
+          "wrong_reuse": 6,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.83,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5454545454545454,
+          "wrong_reuse": 6,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.84,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 1.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5454545454545454,
+          "wrong_reuse": 6,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {}
+        },
+        {
+          "threshold": 0.85,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.86,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.8181818181818182,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 2
+          }
+        },
+        {
+          "threshold": 0.87,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.8181818181818182,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 2
+          }
+        },
+        {
+          "threshold": 0.88,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.7272727272727273,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.36363636363636365,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 3
+          }
+        },
+        {
+          "threshold": 0.89,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.6363636363636364,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.36363636363636365,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.9,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.6363636363636364,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.91,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.92,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.93,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.94,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.36363636363636365,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 7
+          }
+        },
+        {
+          "threshold": 0.95,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.96,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.97,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.98,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.09090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 10
+          }
+        },
+        {
+          "threshold": 0.99,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 11
+          }
+        }
+      ],
+      "val": [
+        {
+          "threshold": 0.7,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.71,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.72,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.73,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.74,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.75,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.76,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 1.0,
+          "wrong_reuse": 4,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.77,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.78,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.79,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.8,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.81,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.82,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.83,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.84,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.85,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.86,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.87,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.88,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.5,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.89,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.9,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.91,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.92,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.93,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.94,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.95,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.96,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.97,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.25,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 3
+          }
+        },
+        {
+          "threshold": 0.98,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.99,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        }
+      ]
+    },
+    "all_checks": {
+      "dev": [
+        {
+          "threshold": 0.7,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.71,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.72,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.73,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.45454545454545453,
+          "wrong_reuse": 5,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.74,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.36363636363636365,
+          "wrong_reuse": 4,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.75,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.36363636363636365,
+          "wrong_reuse": 4,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.76,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.77,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.78,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.79,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.8,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.81,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.82,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.83,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.84,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.9090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 2,
+          "propagated_error_seeds": [
+            "qst_0046",
+            "qst_0184"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.85,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.8181818181818182,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "key_terms": 1,
+            "similar": 1
+          }
+        },
+        {
+          "threshold": 0.86,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.7272727272727273,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 2,
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.87,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.7272727272727273,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.2727272727272727,
+          "wrong_reuse": 3,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 2,
+            "key_terms": 1
+          }
+        },
+        {
+          "threshold": 0.88,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.7272727272727273,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 3
+          }
+        },
+        {
+          "threshold": 0.89,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.6363636363636364,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.9,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.6363636363636364,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.91,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.92,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.18181818181818182,
+          "wrong_reuse": 2,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.93,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.45454545454545453,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 6
+          }
+        },
+        {
+          "threshold": 0.94,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.36363636363636365,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 7
+          }
+        },
+        {
+          "threshold": 0.95,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.96,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.97,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.2727272727272727,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.09090909090909091,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 8
+          }
+        },
+        {
+          "threshold": 0.98,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.09090909090909091,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0046"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 10
+          }
+        },
+        {
+          "threshold": 0.99,
+          "paraphrases": 11,
+          "near_misses": 11,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 11
+          }
+        }
+      ],
+      "val": [
+        {
+          "threshold": 0.7,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.71,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.72,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.73,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.74,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.75,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.76,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.77,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.78,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.79,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.8,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.81,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.82,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.83,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.84,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.85,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.86,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.87,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.88,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.25,
+          "wrong_reuse": 1,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.89,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.9,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.75,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.91,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.92,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.93,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.94,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.95,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.96,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.5,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 1,
+            "evidence": 1
+          }
+        },
+        {
+          "threshold": 0.97,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.25,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 1,
+          "propagated_error_seeds": [
+            "qst_0126"
+          ],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 3
+          }
+        },
+        {
+          "threshold": 0.98,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        },
+        {
+          "threshold": 0.99,
+          "paraphrases": 4,
+          "near_misses": 4,
+          "paraphrase_hit_rate": 0.0,
+          "wrong_entry": 0,
+          "near_miss_wrong_reuse_rate": 0.0,
+          "wrong_reuse": 0,
+          "propagated_errors": 0,
+          "propagated_error_seeds": [],
+          "hits_on_unreviewed_answers": [],
+          "miss_reasons": {
+            "similar": 4
+          }
+        }
+      ]
+    }
+  }
+}

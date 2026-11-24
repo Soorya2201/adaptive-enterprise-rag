@@ -1,0 +1,883 @@
+CACHE SEED QUESTIONS - TO BUILD
+================================
+30 seed questions for testing the verified-answer cache (Week 7, H3).
+Each seed will be asked first so its answer is stored in the cache. Then your
+variant question is asked, and we check whether the cache reuses that answer.
+
+  15 seeds need a PARAPHRASE  -> the cache SHOULD reuse the stored answer
+  15 seeds need a NEAR_MISS   -> the cache must NOT reuse the stored answer
+
+WHAT TO WRITE
+-------------
+Fill in only the lines after "PARAPHRASE:" or "NEAR_MISS:" (and NEAR_MISS_ANSWER:).
+Each seed's TASK line says which one is required. The other one is optional:
+filling it too gives the test more data. Leave unused fields empty.
+
+PARAPHRASE - same question, different words. The correct answer must be EXACTLY
+the same as the seed's gold answer.
+  - Change the wording and sentence order; use synonyms, a shorter or more casual
+    phrasing, or a different level of detail.
+  - Keep every fact that decides the answer: names, IDs, dates, regions, numbers.
+  - Do not just swap one word; make it read like a different person asked it.
+
+NEAR_MISS - looks like the seed but has a DIFFERENT correct answer.
+  - Change one detail that changes the answer: a priority level, region, date,
+    week number, threshold, product, customer, or which fact is asked for.
+  - Best near-misses ask about another fact in the SAME source document (open the
+    SOURCE file below), so the wording stays very close to the seed.
+  - Keep as much of the seed's wording as possible; small changes are the point.
+  - On NEAR_MISS_ANSWER, write the correct answer from the source document, or
+    "not in documents" if the document does not answer it.
+
+Example (seed qst_0104, buddy time for a converted contractor = 1 hour/day for 2 weeks):
+  PARAPHRASE: For contractors converting to full-time, how long should their buddy
+              spend with them each day in the first two weeks?
+  NEAR_MISS:  How much time is a new hire buddy expected to spend per week by
+              week 6 when a long-term contractor converts to a full-time employee?
+  NEAR_MISS_ANSWER: 1-2 hours per week
+
+RULES
+-----
+  - Keep each answer on one line (it can be long). Do not edit the other lines.
+  - Do not look at or use questions from the test split.
+  - 6 seeds have a WRONG or PARTLY CORRECT cached answer (see VERDICT). Write
+    variants for them the same way; they measure how often the cache repeats a
+    wrong answer.
+  - When done, save the file as cache_seed_questions_loaders_complete.txt in
+    this folder (data/cache_seeds/).
+
+Seeds come from the dev (22) and val (8) splits. Each seed's source document is
+different. CACHED ANSWER is what the pipeline answered in the latest run
+(adaptive retriever, Llama expander); it is what the cache will store.
+
+====================================================================================================
+SEED 01 | qst_0025 | split: dev | type: basic
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/confluence/customer-success-and-support/support-process/dsid_9c8cb10d65324c03a8ededbd98c1b058__go-live-protocols-cross-org-communications-escalation-2027.txt
+QUESTION:
+    In the enterprise tenant cutover go-live runbook, what latency threshold triggers escalation
+    based on the 95th percentile being too high, and how long does it need to be sustained?
+GOLD ANSWER:
+    Escalation is triggered if P95 latency exceeds 2000 ms and stays above that level for 10
+    minutes.
+CACHED ANSWER:
+    A latency spike triggering escalation is when P95 latency exceeds 2000ms for 10 minutes. This
+    threshold is defined in the go-live protocols. [S1]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "Latency spike: P95 latency >2000ms for 10 minutes."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 02 | qst_0026 | split: dev | type: basic
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/gmail/dsid_c6a6396159964deeb021d646eaaf2b0c__20250603-customer-escalation-private-upgrade-rollback-request.txt
+QUESTION:
+    For a customer upgrading a private deployment in their own cloud environment, what restore time
+    did support say is typical if the upgrade fails and a rollback is needed (assuming snapshots
+    were taken)?
+GOLD ANSWER:
+    Support said that if pre-upgrade snapshots are in place, service restoration after a failed
+    upgrade and rollback is typically on the order of tens of minutes (with exact timing depending
+    on the snapshot mechanism and database size).
+CACHED ANSWER:
+    Service restoration typically takes tens of minutes if pre-upgrade snapshots are available.
+    Exact time depends on snapshot mechanism (e.g., managed DB PITR vs volume snapshot) and database
+    size. [S2]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S2] "With pre-upgrade snapshots in place, service restoration is typically on the order of tens
+    of minutes. Exact timing depends on your snapshot mechanism (managed DB PITR vs volume snapshot)
+    and the size of the database."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 03 | qst_0029 | split: dev | type: basic
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/jira/internal-support/dsid_429267fe79c74918a26272f6c0e48f10__INT-999999-service-cron-sso-refresh-failure-blocks-nightly-model-evals.txt
+QUESTION:
+    What caused the nightly evaluation cron jobs in the production us-east cluster to fail with an
+    invalid refresh token error after an identity provider policy change?
+GOLD ANSWER:
+    The jobs failed because an Okta Conditional Access policy change (policy pol-2026-02-27-7)
+    mistakenly applied device_trust enforcement to the service-account group
+    "/Services/NonInteractive," causing Okta to revoke the non-interactive refresh tokens and return
+    400 invalid_grant during token refresh.
+CACHED ANSWER:
+    The nightly evaluation cron jobs failed due to an Okta policy change that enforced device trust
+    for the '/Services/NonInteractive' group, which inadvertently revoked refresh tokens for service
+    accounts. The policy was misapplied to include non-human service accounts. This was corrected by
+    reverting the policy and creating an allowlist for machine identities. [S1, S2, S3, S4]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "Okta token endpoint returns HTTP 400 with body:
+    {"error":"invalid_grant","error_description":"The refresh token is invalid or has been
+    revoked"}."
+    [S2] ""refresh token exchange failed: invalid_grant, okta error: token revoked by policy""
+    [S3] "Identity team reverted the policy at 2026-02-28T05:45 UTC which restored token refresh for
+    affected service accounts."
+    [S4] "Maya Chen (Identity) 2026-03-11: Found that a recent session-lifetime policy change
+    inadvertently targeted 'all-Employees' and included service accounts."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 04 | qst_0030 | split: dev | type: basic
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/linear/product-management/dsid_54525a33e2d44d4a9b665feaf8fab624__PM-24680-cohort-comparator-and-trace-linker-for-deployment-health.txt
+QUESTION:
+    In the Console feature that compares canary or A-B cohorts and links metric anomalies to request
+    traces, what customer tiers are allowed into the beta via a feature flag gate?
+GOLD ANSWER:
+    The beta is gated via a Console feature flag to customers on the Dedicated and Hosted tiers
+    (with opt-in for selected customers).
+CACHED ANSWER:
+    Dedicated and Hosted customers are allowed into the beta via a feature flag gate. [S3]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S3] "Beta: open to selected customers on Dedicated and Hosted with opt-in (4 weeks)"
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 05 | qst_0044 | split: dev | type: basic
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/gmail/connor_obrien/dsid_94f011e1d2d04c89a4edc1d68ed9d855__20270504-marketplace-technical-evidence-support-rto-query.txt
+QUESTION:
+    What support response time commitments did Acme approve for being shown in their AWS and Azure
+    marketplace listing for incident priority levels?
+GOLD ANSWER:
+    Acme approved displaying plain-text support response commitments of P1 (critical) = 4 hours and
+    P2 = 8 business hours in their AWS and Azure marketplace listings.
+CACHED ANSWER:
+    Acme approved the following support response time commitments for incident priority levels: P1
+    (critical incidents) = 4 hours, P2 = 8 business hours. These commitments are publicly displayed
+    in the AWS and Azure marketplace listings, with a link to the public support portal for full
+    details. [S1]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "Support RTO: P1 (critical incidents) = 4 hours response, P2 = 8 business hours, P3 = 48
+    hours. We can publish the P1/P2 commitment in the listing and link to our support portal for
+    details."
+    [S5] "SLA: Acme confirms we can display the plain-text support commitments in marketplace
+    listings: P1 = 4 hours, P2 = 8 business hours. We will also provide a link to our public support
+    portal for fuller details: https://status.acme-data.com/support-policy"
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 06 | qst_0046 | split: dev | type: basic
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/gmail/vivek_kulkarni/dsid_3be2b45196414cad9b187551da3ed448__20261116-telemetry-optout-prompt-ownership-kms-routing.txt
+QUESTION:
+    In the Medicore procurement email thread about data use and telemetry, what turnaround timeline
+    did Redwood propose for delivering the operational runbook?
+GOLD ANSWER:
+    Redwood proposed a 5-business-day turnaround to deliver the operational runbook.
+CACHED ANSWER:
+    Redwood proposed a turnaround of 3 business days to deliver the operational runbook and DPA
+    redline, targeting end of day Friday, November 19, 2026. [S1]
+VERDICT: WRONG - says 3 business days; the gold answer is 5 business days
+EVIDENCE QUOTES:
+    [S1] "If you can target the 19 Nov turnaround that would be excellent — otherwise let me know
+    what you can commit to."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 07 | qst_0087 | split: dev | type: basic
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/linear/business-ops/dsid_d921e1d4282b45a7b4990e2366bedc05__ENG-62670-workload-forecast-headroom-controller.txt
+QUESTION:
+    What default lookahead window did the new predictive headroom autoscaling design choose for
+    forecasting future load on dedicated capacity?
+GOLD ANSWER:
+    The design chose a default forecasting lookahead (horizon) of 5 minutes for predicting future
+    load on Dedicated capacity.
+CACHED ANSWER:
+    The default lookahead window for the predictive headroom autoscaling design is 5 minutes. [S1]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "Forecast horizons: default 5 minutes; configurable up to 30 minutes per project"
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 08 | qst_0104 | split: dev | type: basic
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/confluence/people-ops/dsid_005f7a937cad4b3cbb30d9d93199e22a__embedded-contractor-conversion-playbook-2026.txt
+QUESTION:
+    What is the standard amount of time a new hire buddy is expected to spend per day during the
+    first two weeks when a long-term contractor is converted to a full-time employee?
+GOLD ANSWER:
+    The buddy is expected to spend about 1 hour per day with the new hire during the first two
+    weeks.
+CACHED ANSWER:
+    The new hire buddy is expected to spend 1 hour per day during the first two weeks. [S1]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "Buddy time allocation: 1 hour/day for first 2 weeks, tapering to 1-2 hours/week by week
+    6."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 09 | qst_0120 | split: dev | type: basic
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/hubspot/dsid_cb58379b249f4e7dab5e716bbeb11b29__company-silver-birch-scribeco.txt
+QUESTION:
+    What documents did Silver Birch ScribeCo say they needed from us before they could proceed with
+    using real customer data in their trial?
+GOLD ANSWER:
+    They said legal needed a SOC 2 posture/summary (a SOC2 summary pack) and the full list of sub-
+    processors before they could run the trial with real customer data that includes PII. They also
+    requested a signed DPA as part of what they needed before moving forward.
+CACHED ANSWER:
+    Silver Birch ScribeCo stated they needed a DPA and the sub-processor list before proceeding with
+    using real customer data in their trial. [S1]
+VERDICT: PARTLY CORRECT - names the DPA and sub-processor list but omits the SOC 2 summary
+EVIDENCE QUOTES:
+    [S1] "We can't move forward until we have a DPA and the sub-processor list — one of our
+    customers requires that."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 10 | qst_0131 | split: dev | type: basic
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/hubspot/dsid_e9dd560753924c1e8438cdf9c2afcf68__company-peregrine-crosslingo.txt
+QUESTION:
+    What were the performance goals for the multilingual enterprise search project in terms of
+    median and tail response time for retrieval plus reranking, and did they allow a higher tail
+    latency for Japanese or Chinese?
+GOLD ANSWER:
+    The target for retrieval plus reranking was p50 under 120ms and p95 under 350ms in EU/NA
+    regions. Yes-Japanese and Chinese (JA/ZH) were allowed a slightly higher tail latency, with the
+    tail budget noted at around 450ms.
+CACHED ANSWER:
+    The performance goals specified a p50 < 120ms and p95 < 350ms for retrieval plus reranking
+    across languages. Japanese and Chinese were allocated a higher tail latency budget of ~450ms.
+    [S1]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "Latency targets: p50 < 120ms, p95 < 350ms for retrieval+rerank in EU/NA; JA/ZH budget for
+    slightly higher tail (~450ms)."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 11 | qst_0133 | split: dev | type: basic
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/google_drive/shared_drives/company/dsid_ae7131f5d64f4f37af677f702dc60d2b__embed-robustness-noise-length-probe-suite.txt
+QUESTION:
+    What are the pass fail criteria used in the quick pull request smoke checks for the embedding
+    robustness noise and input length evaluation suite?
+GOLD ANSWER:
+    For the quick PR smoke checks, the suite flags failure if any of these exceed the thresholds:
+    median cosine nearest-neighbor distance deviates by more than ±6% from baseline, NDCG@10 on
+    curated-qrels-5lang drops by 3% absolute or more, or cluster purity drops by 5 percentage points
+    or more.
+CACHED ANSWER:
+    The pass/fail criteria for quick pull request smoke checks include: median cosine NN distance
+    within +/- 6% of baseline; NDCG@10 drop < 3% absolute on curated-qrels-5lang; and cluster purity
+    drop < 5 percentage points. These thresholds are designed to balance sensitivity to real
+    regressions and avoid false alarms. [S3]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S3] "Smoke (quick PR): median cosine NN distance within +/- 6% of baseline; NDCG@10 drop < 3%
+    absolute on curated-qrels-5lang; cluster purity drop < 5 percentage points."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 12 | qst_0154 | split: dev | type: basic
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/slack/vendors/dsid_993a77869d244d36972f5efc39dbc59a__3412345678-si-microcredential-exchange-pilot.txt
+QUESTION:
+    What success targets were suggested for the four week micro credential pilot with SI partners
+    (completion percentage and number of integrations started within about two months)?
+GOLD ANSWER:
+    Raj suggested success targets of a 70% completion rate and 5 active integrations started within
+    8 weeks.
+CACHED ANSWER:
+    Success targets for the four-week micro credential pilot include 70% completion rate and 5
+    active integrations started within 8 weeks. [S1]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "suggest target: 70% completion, 5 active integrations started within 8 weeks."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 13 | qst_0184 | split: dev | type: semantic
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/gmail/soojin_lee/dsid_74cd6ebda84547e2a534f8f6d1b49739__20281020-architecture-review-booking-next-steps-cytohealth.txt
+QUESTION:
+    When is the 60 to 90 minute technical deep dive scheduled with the healthcare client about
+    running model serving inside their own isolated network, and what is the time window in Pacific
+    time?
+GOLD ANSWER:
+    The 60-90 minute technical deep dive (private hosting architecture review) is scheduled for
+    Tuesday, October 24, 2028, from 10:00 to 11:15 AM Pacific Time.
+CACHED ANSWER:
+    The 60 to 90 minute technical deep dive is scheduled for Tuesday, May 4, from 14:00 to 15:30 PT.
+    This time window is in Pacific time. [S4]
+VERDICT: WRONG - gives Tuesday May 4, 14:00-15:30 PT from the wrong document; gold is Oct 24, 2028, 10:00-11:15 AM PT
+EVIDENCE QUOTES:
+    [S4] "Thanks — confirmed for Tue May 4, 14:00–15:30 PT (90 minutes). Calendar invite has been
+    sent (Zoom link included)."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 14 | qst_0254 | split: dev | type: semantic
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/hubspot/dsid_5d161fbc61f94eaeb6098a9f9275d38f__company-copper-kite-works.txt
+QUESTION:
+    Need the account notes for a tiny two person dev shop building a browser based coding assistant
+    that struggled with keeping API secrets safe in a serverless front end, is pushing hard for
+    incremental responses to keep the UI snappy, and is asking about cheap usage plus some starter
+    credit before converting from prototype to paid.
+GOLD ANSWER:
+    Copper Kite Works is a PLG self-serve indie dev shop (founder + 1) building an in-app/browser
+    code helper that suggests snippets and explains errors. They're embedding via a Vercel frontend
+    and have run into CORS plus API token exposure concerns, so they want a recommended server proxy
+    pattern; their top product need is streaming/chunked responses to keep the UI responsive, along
+    with a cheap small/quantized model option and clarity on free-tier throttling/rate limits due to
+    cost sensitivity. They've used ~18k tokens in the first 48 hours with batch-test spikes and are
+    asking for promo credits (suggested $200) and a 30-day trial with upgraded limits, noting
+    they'll convert quickly if streaming is easy and pricing is reasonable; blockers include
+    unverified billing card, streaming/latency needs, and unclear token limits.
+CACHED ANSWER:
+    The customer is a two-person dev shop building a browser-based coding assistant with concerns
+    about API secret exposure in a serverless frontend. They are pushing for incremental, streaming
+    responses to maintain UI responsiveness and are cost-sensitive, requesting starter credits
+    before converting to paid. They have expressed interest in low-latency streaming, token economy,
+    and secure proxying to avoid exposing API keys. A recommended approach is to provide a server
+    proxy snippet to avoid token exposure, offer a $200 promo credit, and provide a 30-day trial for
+    upgraded rate limits. Streaming support and cost transparency are key priorities. [S2][S3][S5]
+VERDICT: MOSTLY CORRECT - covers the main needs; omits some details (account name, token usage)
+EVIDENCE QUOTES:
+    [S2] "If streaming is easy and the cost looks reasonable we'll move from prototype to paying
+    users quickly."
+    [S3] "send onboarding checklist + sample server proxy snippet to avoid token exposure; offer
+    $200 promo credit and 30-day trial period for upgraded rate limits"
+    [S5] "We just want something that feels snappy to devs — streaming + predictable latency matters
+    more than absolute creativity."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 15 | qst_0264 | split: dev | type: semantic
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/gmail/olga_petrov/dsid_f09cf2d633174b7ab7105ef0a7498e74__20270809-seedbank-restore-slas-evidence-and-table-ask.txt
+QUESTION:
+    I need the most recent vendor continuity evidence packet for the bank security intake that
+    includes measured switchover recovery timing samples showing a big difference when the in memory
+    cache is prewarmed versus cold, along with a planned live non production witness window in mid
+    August 2027; where is that packet shared and what is the confirmed demo time slot?
+GOLD ANSWER:
+    The continuity evidence starter packet (including the warm/cold KV cache restore timing samples)
+    is shared in the secure folder at https://drive.redwood.example.com/s/seedbank-bcp-evidence
+    (access via the DocuSign NDA link). The confirmed live non-prod/UAT witness demo is scheduled
+    for 2027-08-16 09:30-10:15 ET (with 09:00-11:00 ET held as a buffer).
+CACHED ANSWER:
+    The vendor continuity evidence packet is shared in a secure folder at
+    https://drive.redwood.example.com/s/seedbank-bcp-evidence, accessible via a DocuSign NDA link.
+    The confirmed demo time slot is 2027-08-16 09:30–10:15 ET. [S5]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S5] "Confirmed: UAT witness scheduled for 2027-08-16 09:30–10:15 ET (we'll hold 09:00–11:00 as
+    buffer). Planned walkthrough:"
+    [S5] "I uploaded the starter pack to a secure folder:
+    https://drive.redwood.example.com/s/seedbank-bcp-evidence (access via DocuSign NDA link below).
+    DocuSign for non-prod witness access: https://app.docusign.com/seedbank-nonprod-witness-
+    agreement"
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 16 | qst_0301 | split: dev | type: intra_document_reasoning
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/linear/engineering/dsid_ca18eee975d34f4da7b1b880ea5ac271__ENG-847213-reservation-governor-rationalization-and-noisy-tenant-surge-remedy.txt
+QUESTION:
+    During the 2025-02-10 capacity incident, what two thresholds should trigger noisy-tenant
+    detection in the runbook update, and how long were SLA targets breached?
+GOLD ANSWER:
+    The runbook should flag a noisy tenant when eviction_rate exceeds 0.5% and 99.9th-percentile
+    latency rises to more than 2× baseline. SLA targets were breached for about 45 minutes.
+CACHED ANSWER:
+    The two thresholds that trigger noisy-tenant detection are eviction_rate > 0.5% and 99.9 latency
+    increase > 2x over baseline. SLA targets were breached for approximately 45 minutes. [S1][S2]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "detection thresholds (eviction_rate > 0.5% and 99.9 latency increase > 2x over baseline)"
+    [S2] "production SLA targets were breached for ~45 minutes."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 17 | qst_0329 | split: dev | type: intra_document_reasoning
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/hubspot/dsid_f4fbc3f2bcc24bb29f9da2c81e43661f__company-nimbus-compliance-labs.txt
+QUESTION:
+    After the procurement kickoff call that requested a draft SLA and pricing model, what were the
+    latency targets the bank wanted for interactive IDE edits and streaming token delivery?
+GOLD ANSWER:
+    They wanted interactive IDE edits to have <80 ms median token latency, and streaming token
+    delivery for editor integration to be <50 ms.
+CACHED ANSWER:
+    The bank wanted a p95 first-token latency of less than 400ms for interactive IDE edits and
+    streaming token delivery. This target was confirmed during the procurement kickoff call and
+    validated in the latency discussion with Redwood. [S4]
+VERDICT: WRONG - says p95 first token < 400 ms from the wrong document; gold is <80 ms median and <50 ms streaming
+EVIDENCE QUOTES:
+    [S4] "we want to keep this pretty focused — primary ask is to understand if hosted meets our p95
+    targets for conversational streaming, and what the economics look like for a dedicated pool or
+    private deploy."
+    [S4] "we're seeing big burst spikes from our ingestion pipeline — short spikes to 600 concurrent
+    streams for 30-90s, steady state around 40-60 concurrents."
+    [S5] "we emit per-token latencies and sliding p95s per minute. for UI we find first-token and
+    95th percentile of first-10-tokens are most correlated with perceived snappiness."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 18 | qst_0382 | split: dev | type: constrained
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/confluence/oncall-and-incident-response/postmortems/dsid_7d347905549f4456b0d2226b47e4aa68__2026-02-12-p1-token-accounting-mismatch-postmortem.txt
+QUESTION:
+    In the Feb 12, 2026 incident where daily usage exports briefly overstated output tokens (while
+    invoices stayed correct), what was the root cause and what mitigation + follow-up steps were
+    taken to prevent a repeat?
+GOLD ANSWER:
+    Root cause was a deduplication bug in the usage exporter that counted retried streaming chunks
+    as separate completions when the request_id changed across retry boundaries, inflating
+    output_tokens in daily usage exports. Mitigation was to pause export generation, fix the
+    exporter logic, then backfill and resume exports. Follow-ups were to add a daily reconciliation
+    job comparing invoice vs export counters with paging on drift, change dedup to use a stable
+    trace id across retries, and add a contract test covering streaming retry semantics.
+CACHED ANSWER:
+    The root cause was a deduplication bug in the usage exporter that treated retried streaming
+    chunks as distinct completions when a request ID changed across retry boundaries. Mitigation
+    included pausing export generation, backfilling with corrected logic, and adding a
+    reconciliation job to compare invoice and export counters. Follow-up steps included fixing dedup
+    logic to use stable trace IDs across retries and adding contract tests for streaming retry
+    semantics. [S1]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "A deduplication bug in the usage exporter treated retried streaming chunks as distinct
+    completions when a request id changed across retry boundaries."
+    [S1] "Mitigation: pause export generation; backfill after fix."
+    [S1] "Follow-up action items...Fix usage exporter dedup logic to use stable trace id across
+    retries."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 19 | qst_0387 | split: dev | type: constrained
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/jira/customer-support/dsid_f70e8011de994a9d956fca708445fb5e__SUP-61595-saml-sessionindex-stale-rolecache-causes-intermittent-403s.txt
+QUESTION:
+    In a private VPC deployment using SSO via our identity-proxy, what caused the intermittent 403
+    RBAC denials that occurred right after an IdP group membership sync for users who were already
+    logged in (and were fixed by logging out/in), and what mitigation plus long-term server-side fix
+    did we apply?
+GOLD ANSWER:
+    It was caused by the identity-proxy caching the user's role/group assertions keyed by the stable
+    SAML session_index, so right after the IdP group sync already-logged-in users could hit a stale
+    cached role set and get RBAC 403s until they re-authenticated. We mitigated by doing targeted
+    session revocations and temporarily lowering the session-index role cache TTL (e.g., 60s to 5s),
+    and the long-term fix was to evict that cache on identity-change (group sync) webhooks so
+    existing sessions immediately pick up new roles.
+CACHED ANSWER:
+    The intermittent 403 RBAC denials were caused by stale SAML session_index role cache in the
+    identity-proxy, where role assertions were cached for up to 60 seconds post-IdP group sync,
+    leading to stale role decisions. A temporary mitigation was to reduce the session cache TTL to 5
+    seconds during sync windows and perform targeted session revocation. The long-term fix involved
+    adding proactive cache eviction triggered by IdP user-change webhooks and reducing default
+    session-index cache TTL for private tenants. [S5]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S5] "We can add an immediate cache eviction on receiving IdP user-change webhooks for affected
+    user/session_index. Temporary mitigation: revoke session via Admin API for affected user(s) or
+    instruct end-users to refresh session by re-authenticating."
+    [S5] "Created PR to add proactive eviction on identity webhooks and a feature flag to reduce
+    session-index cache TTL in private tenants. See PR #4892."
+    [S4] "Hypothesis: identity-proxy caches full id_token claims keyed by user id for 300s to reduce
+    IdP calls. Okta group delta updates happen outside the token lifecycle; there's no invalidation
+    on SCIM webhook currently."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 20 | qst_0388 | split: dev | type: constrained
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/jira/customer-support/dsid_8c15ff526e00491e9ccbde5ef4a4458c__SUP-1000007-sse-keepalive-suppression-and-duplicate-heartbeat-resume.txt
+QUESTION:
+    In the March 2026 incident where long-lived Server-Sent Events (SSE) streams would reconnect
+    after a brief upstream TCP reset and then show duplicated heartbeat frames while sometimes never
+    emitting the terminal end-of-stream event, what was the root cause and what server-side fix
+    resolved it?
+GOLD ANSWER:
+    Root cause was a race in the sse-gateway after a brief upstream TCP RST where the in-flight
+    terminal end event flush interleaved with scheduled keepalive/heartbeat work, causing duplicated
+    heartbeat frames and sometimes dropping the terminal end-of-stream event when the client resumed
+    quickly. The fix was PR 2147 on the server to make terminal end emission atomic and strictly
+    ordered ahead of heartbeats, and to delay/guard resume acceptance with a short grace window so a
+    reconnect can't interleave with the final flush.
+CACHED ANSWER:
+    The root cause was a race condition in the sse-gateway where in-flight terminal chunk flush and
+    scheduled keepalive/heartbeat frames were interleaved after a mid-flight upstream TCP RST,
+    leading to the terminal 'end' event being dropped. The fix was implemented via PR 2147, which
+    ensures atomic terminal event emission and orders heartbeat frames behind terminal flush, with a
+    250ms resume-grace-window to tolerate in-flight socket tear-downs. [S2]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S2] "Race condition in sse-gateway where in-flight terminal chunk flush and scheduled
+    keepalive/heartbeat could be interleaved after a mid-flight upstream TCP RST, leading to the
+    terminal 'end' event being dropped under tight resume timing"
+    [S2] "Rolled out inference-runtime PR 2147 which ensures atomic terminal event emission and
+    orders heartbeat frames behind terminal flush. Applied a short backoff on client resume
+    acceptance to tolerate in-flight socket tear-downs."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 21 | qst_0409 | split: dev | type: constrained
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/linear/engineering/dsid_7159e8c7b7a84c45aa51b71fdfc837fc__ENG-11097-priv-cross-tenant-audit-suppression-and-kms-rotation-fix.txt
+QUESTION:
+    In a Private deployment incident in early March 2026, a scheduled KMS envelope key rotation
+    caused about an 18-minute gap where audit events weren't being indexed and some requests saw
+    stale SSO attributes that broke RBAC reconciliation. What was the root cause, and what immediate
+    mitigation/hotfix was applied?
+GOLD ANSWER:
+    Root cause was a KMS rotation race: the audit-forwarder tried to re-encrypt buffered/batched
+    audit events during envelope key rotation, hit transient 403 plus a key-ID mapping change and
+    (due to incorrect retry handling) dropped events, while the SSO assertion cache's invalidation
+    (tied to the signing key fingerprint) lagged the signer-fingerprint index update, allowing stale
+    attributes to be served and RBAC reconciliation to read stale state. Immediate mitigation/hotfix
+    was to pause auto-rotation, run a manual backfill/re-ingest from the forwarder's local buffer,
+    enable strict assertion-cache invalidation on fingerprint drift, and deploy a hotpatch to make
+    the audit-forwarder treat key-ID drift/rotation errors as retryable and buffer events until re-
+    encrypt succeeds.
+CACHED ANSWER:
+    The root cause was a race condition where the SSO assertion cache failed to invalidate stale
+    assertions before KMS key rotation, and the audit-forwarder dropped events due to improper retry
+    logic during re-encryption. The immediate mitigation was a hotfix to the audit-forwarder that
+    treats transient key ID mapping changes as retryable, with a buffer to re-encrypt events until
+    success. Additionally, a temporary policy paused auto-rotation and a backfill job re-ingested
+    dropped audit events. [S4][S5]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S4] "- Audit-forwarder drops: During envelope key rotation the audit-forwarder attempted to re-
+    encrypt stored batched events; our retry logic did not handle a transient key ID mapping change
+    and dropped a subset of events when the re-encrypt RPC returned a 403 followed by an unfamiliar
+    key ID."
+    [S5] "1) Immediate: Activated a temporary policy to pause envelope key auto-rotation on the
+    affected customer's Private cluster and kicked a manual backfill job to re-ingest dropped audit
+    events from forwarder local buffer."
+    [S5] "2) Hotfix deployed: Small change to audit-forwarder retry logic to treat transient key ID
+    mapping changes as retryable and buffer events until a successful re-encrypt."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 22 | qst_0410 | split: dev | type: constrained
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/slack/support/dsid_ab50b630b14e4bfda87847286157b739__1709456789-proxy-header-parse-fail-502-streaming-repro.txt
+QUESTION:
+    In the EU hosted API, streaming generate requests over HTTP/2 intermittently returned 502 only
+    when the client included a ~12KB base64-encoded user-metadata header. What was the root cause in
+    our proxy chain, and what server-side mitigation did we deploy to stop the 502s (include the
+    header and cutoff/behavior)?
+GOLD ANSWER:
+    Root cause was the midproxy NGINX rejecting the request because the client's ~12KB base64
+    X-User-Meta header exceeded its default header/buffer limits ("client sent too large header"),
+    causing NGINX to abort the upstream connection and the edge Envoy to surface it as an
+    intermittent HTTP/2 streaming 502 ("disconnect/reset before headers"). Mitigation deployed was
+    an edge header-filter that drops X-User-Meta when it is >4096 bytes (oversized header is removed
+    so the request can proceed), which stopped the 502s.
+CACHED ANSWER:
+    The root cause was a large base64-encoded X-User-Meta header (~12KB) exceeding NGINX's default
+    proxy_buffer_size of 8KB, causing upstream connection abort and 502 errors. Mitigation deployed:
+    an edge header-filter rule to drop X-User-Meta headers >4096 bytes. This was implemented via
+    deployment ENGOPS-4392 in a canary release for EU1. [S2][S4]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S2] "add edge header-filter rule to drop X-User-Meta > 4096 bytes"
+    [S4] "deployment request created: ENGOPS-4392 -> add edge header-filter rule to drop X-User-Meta
+    > 4096 bytes"
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 23 | qst_0089 | split: val | type: basic
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/github/dsid_426ca69578a84dd4af512e5a2782086e__pr-20311-safelock-fastpath-precision-toggle-kv-eviction.txt
+QUESTION:
+    What are the three runtime precision settings introduced for controlling fp32 vs lower precision
+    execution, and what does each mode allow?
+GOLD ANSWER:
+    The PR introduces three precision modes: **strict** (fp32 only), **balanced** (fp16 allowed but
+    only under strict runtime validators), and **aggressive** (fp16/int8 allowed once the deployment
+    has warmed and validators have a recent success window).
+CACHED ANSWER:
+    The three runtime precision settings are: strict (fp32 only), balanced (fp16 with strict
+    validators), and aggressive (fp16/int8 allowed after warming). Each mode allows different levels
+    of low-precision execution: strict prevents any low-precision use, balanced permits fp16 with
+    validation checks, and aggressive allows fp16/int8 execution once the model is warmed. [S3]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S3] "Introduces a precision toggle API (per-model, per-deployment) with three modes: strict
+    (fp32 only), balanced (fp16 with strict validators), aggressive (fp16/int8 allowed once
+    warmed)."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 24 | qst_0126 | split: val | type: basic
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/fireflies/partners/dsid_912991a0a2ce4000a55b1f67bda8c3a3__2025-05-09-ironcrest-bio-quickstart-hosting-pathway-discovery.txt
+QUESTION:
+    For IronCrest Bioinformatics evaluating Redwood, what was the typical time to get from signup to
+    receiving the first response token using the self-serve quickstart flow?
+GOLD ANSWER:
+    Using Redwood's self-serve (PLG) quickstart flow, the typical time to reach the first response
+    token is about 15-30 minutes.
+CACHED ANSWER:
+    The typical time to get from signup to receiving the first response token using the self-serve
+    quickstart flow is 10–30 minutes. [S2]
+VERDICT: WRONG - says 10-30 minutes; the gold answer is 15-30 minutes
+EVIDENCE QUOTES:
+    [S2] "With Redwood's PLG flow you can get keys and SDKs in under an hour. Typical TTFT to first
+    token for a self-serve user is 15–30 minutes if you have a small sample payload and a
+    Postman/curl test."
+    [S3] "For the quickstart, most teams hit first token — like, literally first token — within
+    10–30 minutes after signup using our SDK and example app."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 25 | qst_0180 | split: val | type: semantic
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/github/dsid_730ed8ee5fc84e0b9be761003b9a60d3__pr-874321-traffic-escrow-and-rehearse-proxy-for-staged-promotes.txt
+QUESTION:
+    In our rollout system, what is the name of the new mechanism that prevents a candidate release
+    from getting full user traffic until a dry run with replayed requests and smoke checks has
+    passed?
+GOLD ANSWER:
+    It's the **TrafficEscrow** (the **traffic_escrow** service), which escrows routing/commit
+    promotion and only releases it after a rehearse run with replayed requests and smoke checks
+    succeeds.
+CACHED ANSWER:
+    The name of the new mechanism is traffic escrow. [S1]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "This PR focuses on the concept of escrowed commits plus a rehearse proxy that allows
+    routing and replay isolation so that candidate revisions can be exercised end-to-end without
+    touching production state."
+    [S2] "a traffic_escrow service that holds routing decisions and only releases commits once a
+    rehearse pass and smoke policy succeed"
+    [S3] "Adds a traffic escrow component and a rehearse-proxy to allow dry-run rehearsals of staged
+    promotes."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 26 | qst_0181 | split: val | type: semantic
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/jira/ops-requests/dsid_8f80516053a24beba08e603cb1831dd6__SUP-501603-signed-cookie-refresh-loop-ephemeral-worker-429s.txt
+QUESTION:
+    During a large overnight upload run using short lived credentials refreshed by many transient
+    workers, what client side scheduling change was recommended to stop periodic too many requests
+    errors after a partial worker restart caused refresh bursts?
+GOLD ANSWER:
+    Support recommended staggering the credential (signed-cookie) refreshes by adding randomized
+    jitter-about 30-120 seconds-to the refresh schedule so workers don't all renew at once after a
+    restart and trigger 429 rate limits.
+CACHED ANSWER:
+    Add randomized jitter (30–120s) to the refresh schedule and increase ephemeral cookie TTL to 5
+    minutes. [S5]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S5] "Recommended client workaround to BrightFleet: add randomized jitter 30–120s to their
+    refresh schedule and increase ephemeral cookie TTL to 5 minutes when running bulk ingest."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 27 | qst_0194 | split: val | type: semantic
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/jira/customer-support/dsid_0c8ea3b2a7fd4392b1f480fe5f0c4725__SUP-92247-service-account-impersonation-scoping-prevents-admin-ops.txt
+QUESTION:
+    After moving a HIPAA customers production private VPC environment to a new internal token
+    exchange service, why would an automation-run service identity start getting 403s when trying to
+    act on behalf of a human admin for user management, even though the same action works with the
+    humans own token?
+GOLD ANSWER:
+    The service account's exchanged token was being issued (and/or filtered) with only default
+    `service:*` scopes due to a token-broker mapping/cache staleness after the private control-plane
+    upgrade, and identity-proxy's allowed-scope table for service accounts was also stale. As a
+    result the token lacked `admin:impersonate`/`admin:users`, so impersonated admin calls returned
+    403 `insufficient_scope`, while the human admin's own token already had the required admin
+    scopes and succeeded.
+CACHED ANSWER:
+    The automation-run service identity receives 403s because the token-broker's cached scope
+    profile is stale and does not include the required admin:impersonate and admin:users scopes.
+    After a private control-plane upgrade, the tenant-mapping rule set 'aurora-mappings' was not
+    applied, and the identity-proxy strips scopes not in the allowed_scope_table, which remained
+    stale with only 'service:*' scopes. A cache invalidation and redeployment of identity-proxy
+    v1.9.3 with a cache-buster flag resolved the issue. [S1][S5]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "token scope mismatch: expected [admin:impersonate,admin:users] got
+    [service:read,service:write]"
+    [S5] "cache invalidation appears tied to last-deploy timestamp; deployment delta on 2026-03-08
+    likely left cache entries inconsistent"
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 28 | qst_0263 | split: val | type: semantic
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/linear/engineering/dsid_061c09d8eef649eba85cd1421e28a41a__ENG-23109-batching-backpressure-latency-isolation.txt
+QUESTION:
+    In the GPU inference runtime that mixes tiny chat requests with very long prompt processing,
+    what is the target reduction for worst case per token latency on the latency sensitive traffic
+    while keeping overall throughput loss under about ten percent?
+GOLD ANSWER:
+    The target is a 35-50% reduction in worst-case (99.9th percentile) per-token latency for
+    latency-sensitive routes, while keeping aggregate throughput degradation under 10% on mixed
+    workloads.
+CACHED ANSWER:
+    The target reduction for worst-case per-token latency on latency-sensitive traffic is 35-50%.
+    This is achieved while keeping overall throughput loss under ten percent. [S1]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "The goal is to reduce 99.9th token latency for latency-sensitive routes by 35-50% without
+    losing >10% aggregate throughput on heavy mixed workloads."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 29 | qst_0333 | split: val | type: intra_document_reasoning
+TASK: NEAR_MISS (required)
+SOURCE: data/subset_documents/fireflies/sales-calls/dsid_100d6362c85946ab97758b63509bc182__2027-07-22-runtime-inference-forensics-interactive-walkthrough-arcadia-retail.txt
+QUESTION:
+    In the runtime inference forensics walkthrough for Arcadia Retail, what is their p95 latency
+    target for interactive queries, and by what day did they say they would upload the sample
+    requests?
+GOLD ANSWER:
+    Arcadia's p95 latency target for interactive queries is 150 ms, and they said they would upload
+    the sample requests by Friday.
+CACHED ANSWER:
+    The p95 latency target for interactive queries is 150ms. They stated they would upload the
+    sample requests by 2027-04-06. [S1][S2][S5]
+VERDICT: PARTLY CORRECT - 150 ms is right; gives 2027-04-06 where the gold answer says Friday
+EVIDENCE QUOTES:
+    [S1] "P95 latency target is 150ms for interactive queries, and anything above 250ms is a
+    problem."
+    [S2] "target 95th percentile < 150ms for typical 64-token requests."
+    [S5] "can we aim to complete the environment readiness milestone by 2027-04-06 instead of 04-08"
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+SEED 30 | qst_0399 | split: val | type: constrained
+TASK: PARAPHRASE (required)
+SOURCE: data/subset_documents/slack/incidents/dsid_4cfe0c490c974065bd497f06ad4a1105__1764823141-rollout-sticky-region-mismatch.txt
+QUESTION:
+    In the mid-March 2026 eu-west canary rollout where sticky fallback kept pinning requests back
+    onto the failing canary instead of the stable quantized variant, what configuration mistake
+    caused the loop and what mitigations were applied to stop it?
+GOLD ANSWER:
+    The loop was caused by the rollout fallback_policy using sticky fallback with preferred_variant
+    set to the ambiguous label "latest", which resolved back to the canary (also tagged "latest")
+    instead of the stable-quantized variant, and the long sticky_ttl kept sessions pinned.
+    Mitigations: pause the canary rollout, change fallback to a forced_variant of stable-quantized,
+    drain the eu-west canary pods, reduce sticky TTL, and enable a temporary eu-west circuit-breaker
+    to force stable routing on elevated error rate.
+CACHED ANSWER:
+    The configuration mistake was using 'latest' as the preferred_variant in the fallback policy,
+    causing sticky fallback to route requests back to the failing canary variant instead of the
+    stable quantized variant. Mitigations included pausing the rollout, updating the fallback_policy
+    to force a specific variant (stable-quantized), draining canary pods, and adding a regional
+    circuit-breaker to prevent oscillation. [S1][S3][S5]
+VERDICT: CORRECT
+EVIDENCE QUOTES:
+    [S1] "I think preferred_variant should've been "stable-quantized" but config says "latest" —
+    that causes fallback to pick the canary variant instead of the older stable one."
+    [S3] "Root-cause hypothesis: rollout config used invariant label 'latest' for preferred_variant
+    while canary also used label 'latest' — fallback logic resolved label to newest tag (canary),
+    producing immediate sticky fallback back to failing variant in region."
+    [S5] "smart-router sticky fallback routes affected sessions to stable v1 in eu-central-1, but
+    affinity TTL + routing policy allow re-evaluation leading to bouncing between regions."
+
+PARAPHRASE: 
+NEAR_MISS: 
+NEAR_MISS_ANSWER: 
+
+====================================================================================================
+END

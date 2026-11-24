@@ -1,3 +1,5 @@
+from contextlib import redirect_stdout
+import io
 import json
 import sys
 from pathlib import Path
@@ -7,8 +9,9 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from adaptive_retrieval.chunking import chunk_document, load_chunks, write_chunks
-from adaptive_retrieval.data import load_documents
+from adaptive_retrieval.data import clean_document_text, load_documents
 from adaptive_retrieval.models import Document
+from adaptive_retrieval import check_subset
 from adaptive_retrieval.prepare_subset import prepare_subset
 from adaptive_retrieval.vector_index import load_index, search_index, write_index
 
@@ -34,6 +37,51 @@ class DataPipelineTests(unittest.TestCase):
             self.assertEqual(rows[0]["path"], "wiki/gold__guide.txt")
             self.assertTrue(rows[0]["is_gold"])
             self.assertEqual(rows[1]["mined_for"], ["q1"])
+
+    def test_escaped_document_bodies_are_decoded(self):
+        slash = chr(92)
+        escaped = ("Subject\n\nFrom: Dylan" + slash + "nTo: Tom" + slash + "n" + slash
+                   + "nHi " + slash + '"team' + slash + '", see C:' + slash + slash + "logs")
+        self.assertEqual(
+            clean_document_text(escaped),
+            'Subject\n\nFrom: Dylan\nTo: Tom\n\nHi "team", see C:' + slash + "logs",
+        )
+
+    def test_documents_that_only_mention_escapes_are_unchanged(self):
+        slash = chr(92)
+        text = "Heartbeat fix\nSend " + '":' + slash + "n" + slash + 'n"' + " every 15s.\nDone."
+        self.assertEqual(clean_document_text(text), text)
+
+    def test_partly_escaped_prose_is_decoded_but_code_is_not(self):
+        slash = chr(92) + "n"
+        code = "printf 'GET / HTTP/1.1" + slash + "Host: x'"
+        head = "\n".join(["Title", "", "Owner: A", "", "Status: open", code, ""])
+        body = "Approach:" + slash + "- First step." + slash + "- Second step." + slash + "Rollback: flag."
+        cleaned = clean_document_text(head + body)
+        self.assertEqual(cleaned, head + "Approach:\n- First step.\n- Second step.\nRollback: flag.")
+        self.assertEqual(clean_document_text(cleaned), cleaned)
+
+    def test_prepare_and_check_subset_decode_escaped_documents(self):
+        slash = chr(92)
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            out = Path(directory) / "processed"
+            (root / "mail").mkdir(parents=True)
+            body = "Subject" + slash + "n" + slash + "nHello " + slash + '"team' + slash + '"'
+            (root / "mail" / "gold__mail.txt").write_text(body, encoding="utf-8")
+            question = {
+                "question_id": "q1", "question_type": "basic",
+                "expected_doc_ids": ["gold"], "hard_negative_ids": [],
+            }
+            (root / "questions_100.jsonl").write_text(json.dumps(question) + "\n", encoding="utf-8")
+            prepare_subset(root, out)
+            row = json.loads((out / "subset_corpus.jsonl").read_text())
+            self.assertEqual(row["text"], 'Subject\n\nHello "team"')
+            with redirect_stdout(io.StringIO()):
+                check_subset.main([
+                    "--questions", str(out / "subset_questions.jsonl"),
+                    "--corpus", str(out / "subset_corpus.jsonl"), "--docs-dir", str(root),
+                ])
 
     def test_parse_corpus_and_preserve_provenance(self):
         with TemporaryDirectory() as directory:

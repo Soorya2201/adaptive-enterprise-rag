@@ -25,6 +25,8 @@ class SearchSession:
                 f"Index not found: {index_path}. Run 'chunk' and 'embed' before searching."
             )
         self.metadata, self.rows = load_index(index_path)
+        # Identifies the frozen experiment: chunks, vectors and build settings together.
+        self.metadata["index_sha256"] = file_sha256(index_path)
         self.embedder = embedder if embedder is not None else LocalEmbedder(
             model_name=self.metadata["model"], revision=self.metadata.get("model_revision"),
         )
@@ -42,17 +44,22 @@ class SearchSession:
             self.documents = {document.id: document for document in load_documents(corpus_path)}
         self.last_timings: dict[str, float] = {}
 
-    def search(self, question: str, top_k: int = 3) -> list[tuple[Chunk, float]]:
+    def embed_question(self, question: str) -> list[float]:
+        if hasattr(self.embedder, "embed_query"):
+            return self.embedder.embed_query(question)
+        return self.embedder.embed_texts([question])[0]
+
+    def search(
+        self, question: str, top_k: int = 3, *, vector: list[float] | None = None,
+    ) -> list[tuple[Chunk, float]]:
+        """Rank chunks; pass ``vector`` to reuse a question embedding computed earlier."""
         question = question.strip()
         if not question:
             raise ValueError("Enter a question to search")
         if top_k < 1:
             raise ValueError("top_k must be positive")
         started = perf_counter()
-        if hasattr(self.embedder, "embed_query"):
-            query_vector = self.embedder.embed_query(question)
-        else:
-            query_vector = self.embedder.embed_texts([question])[0]
+        query_vector = vector if vector is not None else self.embed_question(question)
         encoded = perf_counter()
         results = search_index(self.rows, query_vector, top_k)
         self.last_timings = {
