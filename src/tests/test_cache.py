@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -12,7 +13,8 @@ from adaptive_retrieval.judge import (
     Judgment, OllamaJudge, QwenJudge, SameQuestionJudge, build_judge_input,
 )
 from adaptive_retrieval.cache_eval import (
-    choose_judge, decide, missing_required, parse_seed_file, score, seed_variants,
+    choose_judge, decide, format_cache_summary, missing_required, parse_seed_file,
+    run_cache_evaluation, score, seed_variants,
 )
 from adaptive_retrieval.interactive import SearchSession
 from adaptive_retrieval.models import Chunk
@@ -85,7 +87,7 @@ class VerifiedCacheTests(unittest.TestCase):
         self.assertEqual(decision.entry.origin, "q-buddy")
 
     def test_each_check_can_refuse_reuse(self):
-        cache = filled_cache()
+        cache = filled_cache(key_term_veto=True)
         cases = {
             "best_similar_failed": dict(vector=(0.0, 1.0)),
             "best_key_terms_failed": dict(question="How long should a buddy spend per week by week 6?"),
@@ -100,6 +102,19 @@ class VerifiedCacheTests(unittest.TestCase):
                 self.assertEqual(decision.reason, reason)
         self.assertEqual(cache.judge.calls, [], "failed checks must not cost a judge call")
 
+    def test_veto_is_off_by_default_but_still_recorded(self):
+        near_miss = "How long should a buddy spend per week by week 6?"
+        judge = FakeJudge("no")
+        decision = self.lookup(filled_cache(judge=judge), near_miss)
+        self.assertEqual(decision.reason, "judge_no", "without the veto the judge decides")
+        self.assertEqual(judge.calls, [(near_miss, QUESTION)])
+        self.assertEqual((decision.key_term_veto, decision.veto_would_block), (False, True))
+        self.assertTrue(self.lookup(filled_cache(), near_miss).hit, "only the judge stands in the way")
+        vetoed = self.lookup(filled_cache(key_term_veto=True), near_miss).summary()
+        self.assertEqual((vetoed["reason"], vetoed["key_term_veto"]), ("best_key_terms_failed", True))
+        paraphrase = self.lookup(filled_cache(), "In the first 2 weeks, how much daily buddy time is expected?")
+        self.assertEqual(paraphrase.summary()["veto_would_block"], False)
+
     def test_only_a_judge_yes_allows_reuse(self):
         for verdict in ("no", "invalid", "timeout", "error"):
             with self.subTest(verdict=verdict):
@@ -109,12 +124,16 @@ class VerifiedCacheTests(unittest.TestCase):
         self.assertEqual(self.lookup(filled_cache(judge=None)).reason, "no_judge")
 
     def test_judge_is_called_once_for_the_most_similar_passing_entry(self):
-        cache = filled_cache(judge=FakeJudge("no"))
-        for question, vector in (("Buddy time by week 6?", [0.99, 0.14]),
-                                 ("Daily buddy time in the first 2 weeks?", [0.97, 0.24])):
-            cache.admit(question, vector, answer_result(), VERSIONS, {BUDDY.id: BUDDY})
-        self.assertFalse(self.lookup(cache).hit)
-        self.assertEqual(cache.judge.calls, [(QUESTION, "Daily buddy time in the first 2 weeks?")])
+        # The most similar entry asks about week 6; only the veto skips it.
+        for veto, expected in ((True, "Daily buddy time in the first 2 weeks?"),
+                               (False, "Buddy time by week 6?")):
+            with self.subTest(key_term_veto=veto):
+                cache = filled_cache(judge=FakeJudge("no"), key_term_veto=veto)
+                for question, vector in (("Buddy time by week 6?", [0.99, 0.14]),
+                                         ("Daily buddy time in the first 2 weeks?", [0.97, 0.24])):
+                    cache.admit(question, vector, answer_result(), VERSIONS, {BUDDY.id: BUDDY})
+                self.assertFalse(self.lookup(cache).hit)
+                self.assertEqual(cache.judge.calls, [(QUESTION, expected)])
 
     def test_only_checked_answers_are_admitted(self):
         cache = VerifiedCache(require_exact_quotes=True)
@@ -136,9 +155,10 @@ class VerifiedCacheTests(unittest.TestCase):
             path = Path(directory) / "cache.jsonl"
             cache = VerifiedCache(path)
             cache.admit(QUESTION, [1.0, 0.0], answer_result(), VERSIONS, {BUDDY.id: BUDDY})
-            reloaded = VerifiedCache(path, judge=FakeJudge())
-            self.assertEqual(len(reloaded), 1)
-            self.assertTrue(self.lookup(reloaded).hit)
+            for veto in (False, True):
+                reloaded = VerifiedCache(path, judge=FakeJudge(), key_term_veto=veto)
+                self.assertEqual(len(reloaded), 1)
+                self.assertTrue(self.lookup(reloaded).hit)
 
 
 class FakeSession:
@@ -169,7 +189,7 @@ class CachedPipelineTests(unittest.TestCase):
             "status": "answer", "answer": "1 hour per day. [S1]",
             "citations": [{"source": "S1", "quote": "1 hour/day for first 2 weeks"}],
         }
-        pipeline = RagPipeline(FakeSession(), generator, VerifiedCache(judge=FakeJudge()))
+        pipeline = RagPipeline(FakeSession(), generator, VerifiedCache(judge=FakeJudge(), key_term_veto=True))
         first = pipeline.ask(QUESTION)
         self.assertEqual((first["route"], first["cache"]["admitted"]), ("single_pass", True))
         second = pipeline.ask("Per day, how long does a buddy spend in the first 2 weeks?")
@@ -426,6 +446,74 @@ class CacheEvaluationTests(unittest.TestCase):
         self.assertEqual(choose_judge({"a": row(1, 10, 5), "b": row(0, 4, 50), "c": row(0, 6, 90)}), "c")
         no_key_terms = score(records, warm, 0.92, ("key_terms",))
         self.assertEqual(no_key_terms["wrong_reuse"], 1)
+
+
+class GoldWarmupTests(unittest.TestCase):
+    def setUp(self):
+        directory = TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+        (self.root / "seeds.txt").write_text(SEED_FILE)
+        self.write_questions("1 hour per day, week-by-week", "4 hours")
+        self.generator = FakeGenerator()
+        self.session = FakeSession()
+
+    def write_questions(self, *answers):
+        rows = [
+            {"question_id": f"qst_000{number}", "question": text, "gold_answer": answer}
+            for number, text, answer in zip(
+                (1, 2), ("How long should a buddy spend per day?", "What is the P1 response time?"), answers,
+            )
+        ]
+        (self.root / "questions.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    def evaluate(self, cache, out="out"):
+        settings = {"retriever": "hybrid"}
+        with patch("adaptive_retrieval.cache_eval.run_settings", return_value=settings):
+            return run_cache_evaluation(
+                RagPipeline(self.session, self.generator, cache), {"j": FakeJudgeWithDescription()},
+                self.root / "seeds.txt", self.root / "questions.jsonl", self.root / out,
+                warm_with="gold",
+            )
+
+    def test_gold_warmup_stores_benchmark_answers_without_running_the_pipeline(self):
+        cache = VerifiedCache()
+        run_dir, summary = self.evaluate(cache)
+        self.assertEqual((self.generator.calls, self.session.searches), (0, 0))
+        self.assertEqual([entry.answer for entry in cache.entries],
+                         ["1 hour per day, week-by-week", "4 hours"])
+        self.assertIn("_gold_", run_dir.name)
+        self.assertEqual((summary["run"]["warm_with"], summary["seeds_cached"]), ("gold", 2))
+        self.assertEqual(summary["seed_answers_changed_since_template"], [])
+        self.assertEqual((summary["run"]["key_term_veto"], summary["run"]["default_config"]),
+                         (False, "judge_without_key_terms"))
+        self.assertIn("judge_without_key_terms:j (default)", format_cache_summary(summary))
+        vetoed = self.evaluate(VerifiedCache(key_term_veto=True), out="vetoed")[1]
+        self.assertEqual(vetoed["run"]["default_config"], "full")
+        self.assertIsNone(summary["latency"]["mean_full_pipeline_ms"])
+        row = summary["results"]["similarity_only"]["all"]
+        self.assertEqual((row["correct_matches"], row["served_right"], row["propagated_errors"]), (1, 1, 0))
+        self.assertEqual(row["wrong_reuse"], 1, "gold answers must not hide a false match")
+        self.assertTrue(format_cache_summary(summary).startswith("CACHE-ONLY TEST"))
+
+    def test_gold_warmup_rejects_missing_answers_and_exact_quotes(self):
+        with self.assertRaisesRegex(ValueError, "quotes"):
+            self.evaluate(VerifiedCache(require_exact_quotes=True))
+        self.write_questions("1 hour per day", " ")
+        with self.assertRaisesRegex(ValueError, "qst_0002"):
+            self.evaluate(VerifiedCache())
+        self.assertFalse((self.root / "out").exists(), "invalid input must not leave a run folder")
+
+    def test_reference_answers_never_reach_a_saved_cache(self):
+        path = self.root / "cache.jsonl"
+        with self.assertRaisesRegex(ValueError, "in-memory"):
+            VerifiedCache(path).admit_reference(QUESTION, [1, 0], "gold", VERSIONS, origin="q")
+        self.assertFalse(path.exists())
+
+
+class FakeJudgeWithDescription(FakeJudge):
+    def describe(self):
+        return {"backend": "fake"}
 
 
 if __name__ == "__main__":

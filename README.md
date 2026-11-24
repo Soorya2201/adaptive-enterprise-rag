@@ -129,7 +129,9 @@ reuses one only for the same question:
    Retriever, top-k, prompt budget and expander only separate entries: arms can
    share a file without sharing answers or discarding each other.
 2. **Shortlist:** question cosine similarity of at least 0.80.
-3. **Key-term veto:** numbers, `snake_case` identifiers and regions match exactly.
+3. **Key-term veto (optional, off by default):** with `--key-term-veto`, numbers,
+   `snake_case` identifiers and regions must match exactly. When it is off, the
+   check is still recorded (`veto_would_block` in each trace's `cache` field).
 4. **Sources assertion:** cited chunks and quotes are intact.
 5. **Judge:** the most similar remaining entry goes to an LLM that sees only the
    two questions. Only an exact `YES` is a hit; NO, other text, errors and
@@ -138,10 +140,13 @@ reuses one only for the same question:
 ```bash
 python src/runner.py rag --retriever adaptive --cache data/processed/answer_cache.jsonl
 python src/runner.py cache-eval --retriever adaptive      # compares both judges
+python src/runner.py cache-eval --retriever adaptive --warm gold   # cache alone
 ```
 
 `--cache-judge` selects `qwen` (default, the loaded MLX generator) or `llama`
-(Ollama). `--cache-threshold` changes the shortlist threshold. The cache is off
+(Ollama). `--cache-threshold` changes the shortlist threshold. `--key-term-veto`
+switches the veto on for `rag`, `ask` and `cache-eval`; `cache-eval` reports
+both settings either way and marks the one used as `(default)`. The cache is off
 unless `--cache` is passed.
 
 **Experimental.** Matching worked on the development variants, but a match does
@@ -156,6 +161,12 @@ so do not share one between users who may see different documents. See the [resu
 cache with the seeds, then judges each paraphrase and near-miss without
 generating. It reports both judges, runs with checks switched off, controls and
 a descriptive threshold sweep under `results/cache_eval_<retriever>_<timestamp>/`.
+
+`--warm gold` isolates the cache from retrieval, generation and the checker: it
+stores the benchmark's gold answer for every seed, in memory only, and writes to
+`cache_eval_<retriever>_gold_<timestamp>/`. A matched answer is then right by
+construction, so report it next to the generated run, never as end-to-end
+accuracy. It records no pipeline time or tokens.
 
 ## Ask questions
 

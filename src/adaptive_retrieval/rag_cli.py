@@ -115,11 +115,11 @@ def run_rag(args) -> None:
     cache = None
     if getattr(args, "cache", None):
         cache = VerifiedCache(
-            args.cache, threshold=args.cache_threshold,
+            args.cache, threshold=args.cache_threshold, key_term_veto=args.key_term_veto,
             judge=make_judge(args.cache_judge, generator, args.expansion_model),
         )
-        print(f"Answer cache: {args.cache} ({len(cache)} entries, threshold {args.cache_threshold})",
-              file=sys.stderr, flush=True)
+        print(f"Answer cache: {args.cache} ({len(cache)} entries, threshold {args.cache_threshold}, "
+              f"key-term veto {'on' if args.key_term_veto else 'off'})", file=sys.stderr, flush=True)
     try:
         _run_rag_session(args, RagPipeline(session, generator, cache), started)
     finally:
@@ -154,12 +154,13 @@ def run_cache_eval(args) -> None:
     print("Loading index and warming local models...", file=sys.stderr, flush=True)
     generator = QwenGenerator(max_new_tokens=args.max_new_tokens, max_prompt_tokens=args.max_prompt_tokens)
     session = open_search_session(args, generator)
-    cache = VerifiedCache(threshold=args.cache_threshold, require_exact_quotes=args.require_exact_quotes)
+    cache = VerifiedCache(threshold=args.cache_threshold, require_exact_quotes=args.require_exact_quotes,
+                          key_term_veto=args.key_term_veto)
     judges = {name: make_judge(name, generator, args.expansion_model) for name in args.judges}
     try:
         run_dir, summary = run_cache_evaluation(
             RagPipeline(session, generator, cache), judges, args.seeds, args.questions, args.out_dir,
-            top_k=args.top_k, progress=print_progress,
+            top_k=args.top_k, warm_with=args.warm, progress=print_progress,
         )
     finally:
         session.close()

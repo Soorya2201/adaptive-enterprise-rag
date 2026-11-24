@@ -6,10 +6,12 @@ rebuilt. Retrieval and answer settings (``scope``) keep separate entries instead
 
 1. ``similar``   question similarity is at least the threshold. This only shortlists;
                  it cannot tell "same question" from "same topic".
-2. ``key_terms`` numbers, identifiers and regions match exactly (a cheap veto).
+2. ``key_terms`` numbers, identifiers and regions match exactly. Optional veto
+                 (``key_term_veto``), off by default: it is always computed and
+                 recorded, but only blocks reuse when switched on.
 3. ``sources``   safety assertion: cited chunks and quotes are intact, which also
                  catches re-chunking of an unchanged corpus.
-4. The most similar entry passing 1-3 goes to the judge. Only a strict YES is a hit.
+4. The most similar entry passing the active checks goes to the judge. Only a strict YES is a hit.
 
 Without a judge there are never hits. A match does not make the stored answer
 correct: a wrong answer that passed the quote checker will be repeated.
@@ -118,12 +120,17 @@ class CacheDecision:
     reason: str
     candidates: list[Candidate] = field(default_factory=list)
     judgment: Judgment | None = None
+    key_term_veto: bool | None = None
+    # Whether the veto would have blocked the entry sent to the judge (None: none was).
+    veto_would_block: bool | None = None
 
     def summary(self) -> dict:
         best = self.candidates[0] if self.candidates else None
         return {
             "hit": self.hit,
             "reason": self.reason,
+            "key_term_veto": self.key_term_veto,
+            "veto_would_block": self.veto_would_block,
             "entry_id": self.entry.entry_id if self.entry else None,
             "matched_origin": self.entry.origin if self.entry else None,
             "matched_question": self.entry.question if self.entry else None,
@@ -139,7 +146,7 @@ class VerifiedCache:
     def __init__(
         self, path: Path | None = None, *, threshold: float = DEFAULT_THRESHOLD,
         require_exact_quotes: bool = False, max_candidates: int = 5,
-        judge: SameQuestionJudge | None = None,
+        judge: SameQuestionJudge | None = None, key_term_veto: bool = False,
     ) -> None:
         if not 0 < threshold <= 1:
             raise ValueError("threshold must be in (0, 1]")
@@ -148,6 +155,7 @@ class VerifiedCache:
         self.judge = judge
         self.require_exact_quotes = require_exact_quotes
         self.max_candidates = max_candidates
+        self.key_term_veto = key_term_veto
         self.entries: list[CacheEntry] = []
         self._matrix = None
         if self.path and self.path.is_file():
@@ -228,6 +236,22 @@ class VerifiedCache:
         self._add(entry, persist=True)
         return True, "admitted"
 
+    def admit_reference(
+        self, question: str, vector, answer: str, versions: dict, *, origin: str,
+    ) -> None:
+        """Store a benchmark answer without citations, for the cache-only experiment.
+
+        It skips the answer checker, so it is refused for a cache saved to disk.
+        """
+        if self.path:
+            raise ValueError("Reference answers are only allowed in an in-memory cache")
+        self._add(CacheEntry(
+            entry_id=uuid4().hex, question=question.strip(),
+            vector=[float(value) for value in vector], key_terms=key_terms(question),
+            answer=answer, citations=[], versions=dict(versions),
+            created_utc=datetime.now(timezone.utc).isoformat(timespec="seconds"), origin=origin,
+        ), persist=False)
+
     def shortlist(
         self, question: str, vector, versions: dict, chunks: dict, *, threshold: float | None = None,
     ) -> tuple[list[Candidate], str]:
@@ -269,20 +293,26 @@ class VerifiedCache:
         """At most one judge call; anything but a strict YES is a miss."""
         threshold = self.threshold if threshold is None else threshold
         candidates, reason = self.shortlist(question, vector, versions, chunks, threshold=threshold)
+        veto = self.key_term_veto
         if not candidates:
-            return CacheDecision(False, None, reason)
-        selected = next((c for c in candidates if c.passes(threshold)), None)
+            return CacheDecision(False, None, reason, key_term_veto=veto)
+        skip = () if veto else ("key_terms",)
+        selected = next((c for c in candidates if c.passes(threshold, skip)), None)
         if selected is None:
-            failed = next(name for name in CHECKS if not candidates[0].checks[name])
-            return CacheDecision(False, None, f"best_{failed}_failed", candidates)
+            failed = next(n for n in CHECKS if n not in skip and not candidates[0].checks[n])
+            return CacheDecision(False, None, f"best_{failed}_failed", candidates, key_term_veto=veto)
+        would_block = not selected.checks["key_terms"]
         if self.judge is None:
-            return CacheDecision(False, None, "no_judge", candidates)
+            return CacheDecision(False, None, "no_judge", candidates,
+                                 key_term_veto=veto, veto_would_block=would_block)
         judgment = self.judge.judge(question, selected.question)
         if not judgment.same:
-            return CacheDecision(False, None, f"judge_{judgment.verdict}", candidates, judgment)
+            return CacheDecision(False, None, f"judge_{judgment.verdict}", candidates, judgment,
+                                 key_term_veto=veto, veto_would_block=would_block)
         entry = next(e for e in self.entries if e.entry_id == selected.entry_id)
         entry.hits += 1
-        return CacheDecision(True, entry, "hit", candidates, judgment)
+        return CacheDecision(True, entry, "hit", candidates, judgment,
+                             key_term_veto=veto, veto_would_block=would_block)
 
     @staticmethod
     def _sources_unchanged(entry: CacheEntry, chunks: dict) -> tuple[bool, str]:

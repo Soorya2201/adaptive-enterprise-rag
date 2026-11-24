@@ -1,6 +1,9 @@
 """Cache experiment: warm with seeds, then shortlist and judge paraphrases and near-misses.
 
 1. Warm-up: each seed runs through the full pipeline; checked answers are stored.
+   ``warm_with="gold"`` stores the benchmark answers instead, to test the cache
+   apart from retrieval, generation and the checker. It says nothing about the
+   answer quality of the whole system.
 2. Test: variants are only looked up, never generated or stored, so they cannot
    affect one another. Each judge rules once on every candidate that any threshold
    or key-term setting could select.
@@ -35,7 +38,14 @@ CONFIGS = {
     "judge_without_key_terms": (("key_terms",), True),
     "full": ((), True),
 }
-RIGHT = {"CORRECT", "MOSTLY CORRECT"}
+
+
+def default_config(key_term_veto: bool) -> str:
+    """The judged configuration that matches how the cache runs normally."""
+    return "full" if key_term_veto else "judge_without_key_terms"
+
+WARM_SOURCES = ("generated", "gold")
+RIGHT = {"CORRECT", "MOSTLY CORRECT", "GOLD"}  # GOLD is right by construction
 _SEED_HEADER = re.compile(
     r"^SEED (\d+) \| (qst_\d+) \| split: (\w+) \| type: (\w+)\s*$"
 )
@@ -182,9 +192,23 @@ def choose_judge(dev_scores: dict[str, dict]) -> str:
     ))
 
 
+def _store_gold(pipeline, question: dict, top_k: int) -> dict:
+    """Cache a benchmark answer; return the fields the warm-up log needs."""
+    text, answer = question["question"], question["gold_answer"].strip()
+    pipeline.cache.admit_reference(
+        text, pipeline.session.embed_question(text), answer, pipeline.versions(top_k),
+        origin=question["question_id"],
+    )
+    return {
+        "status": "answer", "reason": "gold_answer", "answer": answer, "citations": [],
+        "cache": {"admitted": True, "admission": "gold_answer"},
+        "metrics": {"total_ms": None, "total_llm_tokens": None},
+    }
+
+
 def run_cache_evaluation(
     pipeline, judges: dict, seeds_path: Path, questions_path: Path, out_dir: Path, *,
-    top_k: int = 5, progress=None,
+    top_k: int = 5, warm_with: str = "generated", progress=None,
 ) -> tuple[Path, dict]:
     cache = pipeline.cache
     if cache is None or len(cache):
@@ -199,6 +223,17 @@ def run_cache_evaluation(
         if line.strip():
             row = json.loads(line)
             questions[row["question_id"]] = row
+    if warm_with not in WARM_SOURCES:
+        raise ValueError(f"warm_with must be one of {WARM_SOURCES}")
+    gold = warm_with == "gold"
+    if gold:
+        if cache.require_exact_quotes:
+            raise ValueError("Gold answers have no quotes, so exact quotes cannot be required")
+        # From the benchmark: line wrapping in the seed file breaks hyphenated words.
+        missing = [s["question_id"] for s in seeds
+                   if not (questions[s["question_id"]].get("gold_answer") or "").strip()]
+        if missing:
+            raise ValueError(f"No gold answer for {missing}")
     variants = seed_variants(seeds)
     if not judges:
         raise ValueError("Cache evaluation needs at least one judge")
@@ -207,24 +242,31 @@ def run_cache_evaluation(
         judge.warmup()
     timestamp = datetime.now(timezone.utc)
     settings = run_settings(pipeline.session)
-    run_dir = Path(out_dir) / f"cache_eval_{settings['retriever']}_{timestamp:%Y%m%d-%H%M%S}"
+    label = f"{settings['retriever']}_gold" if gold else settings["retriever"]
+    run_dir = Path(out_dir) / f"cache_eval_{label}_{timestamp:%Y%m%d-%H%M%S}"
     run_dir.mkdir(parents=True, exist_ok=False)
 
     warm = {}
     with (run_dir / "warmup.jsonl").open("w", encoding="utf-8") as stream:
         for number, seed in enumerate(seeds, 1):
             question = questions[seed["question_id"]]
-            result = pipeline.ask(question["question"], top_k, use_cache=False, admit=True,
-                                  origin=seed["question_id"])
-            same = _normalize(result["answer"]) == _normalize(seed.get("cached_answer"))
+            if gold:
+                result = _store_gold(pipeline, question, top_k)
+                # Not comparable: the template holds generated answers.
+                same, quality = None, "GOLD"
+            else:
+                result = pipeline.ask(question["question"], top_k, use_cache=False, admit=True,
+                                      origin=seed["question_id"])
+                same = _normalize(result["answer"]) == _normalize(seed.get("cached_answer"))
+                # The template verdict only applies if the pipeline gave the same answer again.
+                quality = seed["verdict_label"] if same else "UNREVIEWED"
             record = {
                 "question_id": seed["question_id"], "split": seed["split"],
                 "question": question["question"], "status": result["status"],
                 "reason": result["reason"], "answer": result["answer"],
                 "admitted": result["cache"]["admitted"], "admission": result["cache"]["admission"],
                 "same_answer_as_template": same,
-                # The template verdict only applies if the pipeline gave the same answer again.
-                "answer_quality": seed["verdict_label"] if same else "UNREVIEWED",
+                "answer_quality": quality,
                 "total_ms": result["metrics"]["total_ms"],
                 "total_llm_tokens": result["metrics"]["total_llm_tokens"],
                 "citations": result["citations"],
@@ -297,7 +339,8 @@ def run_cache_evaluation(
         return table
 
     results = compare(cache.threshold)
-    chosen = choose_judge({name: results[f"full:{name}"]["dev"] for name in judges})
+    default = default_config(cache.key_term_veto)
+    chosen = choose_judge({name: results[f"{default}:{name}"]["dev"] for name in judges})
     cached_seeds = [w for w in warm.values() if w["admitted"]]
     judge_stats = {}
     for name, judge in judges.items():
@@ -323,6 +366,8 @@ def run_cache_evaluation(
             "top_k": top_k, "threshold": cache.threshold,
             "max_candidates": cache.max_candidates,
             "require_exact_quotes": cache.require_exact_quotes,
+            "key_term_veto": cache.key_term_veto, "default_config": default,
+            "warm_with": warm_with,
             "judge_prompt": JUDGE_PROMPT,
             "versions": versions, "generator": pipeline.generator.model_name,
             **settings,
@@ -331,7 +376,7 @@ def run_cache_evaluation(
         "seeds_cached": len(cached_seeds),
         "seeds_not_cached": {w["question_id"]: w["reason"] for w in warm.values() if not w["admitted"]},
         "seed_answers_changed_since_template": [
-            w["question_id"] for w in warm.values() if not w["same_answer_as_template"]
+            w["question_id"] for w in warm.values() if w["same_answer_as_template"] is False
         ],
         "variants": len(records),
         "variants_scored": len(scored),
@@ -342,9 +387,12 @@ def run_cache_evaluation(
         "latency": {
             "mean_embedding_ms": mean(r["embedding_ms"] for r in records) if records else None,
             "mean_shortlist_ms": mean(r["shortlist_ms"] for r in records) if records else None,
-            "mean_full_pipeline_ms": mean(w["total_ms"] for w in cached_seeds) if cached_seeds else None,
+            # A gold warm-up never runs the pipeline, so it has no cost to compare with.
+            "mean_full_pipeline_ms": (
+                mean(w["total_ms"] for w in cached_seeds) if cached_seeds and not gold else None
+            ),
             "mean_llm_tokens_full_pipeline": (
-                mean(w["total_llm_tokens"] for w in cached_seeds) if cached_seeds else None
+                mean(w["total_llm_tokens"] for w in cached_seeds) if cached_seeds and not gold else None
             ),
         },
         "sweeps": [{"threshold": t, "results": compare(t)} for t in THRESHOLDS],
@@ -358,8 +406,12 @@ def format_cache_summary(summary: dict) -> str:
         f"Seeds cached: {summary['seeds_cached']}/{summary['seeds']} | variants scored: "
         f"{summary['variants_scored']}/{summary['variants']} | threshold {summary['run']['threshold']:.2f}",
     ]
+    if summary["run"].get("warm_with") == "gold":
+        lines.insert(0, "CACHE-ONLY TEST: warmed with gold answers, so a matched answer is right by "
+                        "construction. Not end-to-end accuracy.")
+    default = summary["run"].get("default_config")
     for label, groups in summary["results"].items():
-        lines.append(label)
+        lines.append(f"{label} (default)" if default and label.split(":")[0] == default else label)
         for group, row in groups.items():
             lines.append(
                 f"  {group}: matched {row['correct_matches']}/{row['paraphrases']} "

@@ -118,6 +118,10 @@ def create_parser() -> argparse.ArgumentParser:
         )
         rag.add_argument("--cache-threshold", type=float, default=DEFAULT_THRESHOLD)
         rag.add_argument("--cache-judge", choices=("qwen", "llama"), default="qwen")
+        rag.add_argument(
+            "--key-term-veto", action="store_true",
+            help="Refuse reuse when numbers, identifiers or regions differ (off by default)",
+        )
     cache_eval = commands.add_parser(
         "cache-eval", help="Warm the answer cache with seed questions, then test paraphrases and near-misses",
     )
@@ -131,6 +135,14 @@ def create_parser() -> argparse.ArgumentParser:
     cache_eval.add_argument("--max-prompt-tokens", type=int, default=4096)
     cache_eval.add_argument("--cache-threshold", type=float, default=DEFAULT_THRESHOLD)
     cache_eval.add_argument("--judges", nargs="+", choices=("qwen", "llama"), default=["qwen", "llama"])
+    cache_eval.add_argument(
+        "--key-term-veto", action="store_true",
+        help="Refuse reuse when numbers, identifiers or regions differ (off by default)",
+    )
+    cache_eval.add_argument(
+        "--warm", choices=("generated", "gold"), default="generated",
+        help="gold tests the cache alone by storing benchmark answers instead of generated ones",
+    )
     cache_eval.add_argument(
         "--require-exact-quotes", action="store_true",
         help="Store only answers whose quotes all matched exactly",

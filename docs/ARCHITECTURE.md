@@ -133,7 +133,7 @@ flowchart LR
     Q[Question] --> E[Embed once]
     E --> V{Entry with same corpus<br/>and model versions?}
     V -->|no| P
-    V -->|yes| C{similarity >= 0.80,<br/>key terms, sources?}
+    V -->|yes| C{similarity >= 0.80,<br/>sources, key terms if veto on?}
     C -->|no| P[Full pipeline; store the answer if it passes the checker]
     C -->|top passing entry| J{Judge: same question?}
     J -->|exact YES| H[Return stored answer: route cache_hit]
